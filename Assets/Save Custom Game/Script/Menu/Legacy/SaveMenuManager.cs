@@ -1,5 +1,4 @@
 using System.IO;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,39 +13,39 @@ public class SaveMenuManager : MonoBehaviour
     [SerializeField] private Button cancelButton; // Button to cancel Save.
     [Space(10)]
     [Header("Title Systems")]
-    [SerializeField] private TMP_Text titleLoad; // Title text for Save menu.
+    [SerializeField] private Text titleLoad; // Title text for Save menu.
     public string text = "Save"; // Default text for save slots.
     public string textAutomatic = "Autosave"; // Text for automatic save slot.
     [Space(10)]
     [Header("Button systems")]
     [SerializeField] private Button buttonSave1; // Button for Save slot 1.
     [SerializeField] private RawImage rawImageSave1; // Image for Save slot 1.
-    [SerializeField] private TMP_Text textSave1; // Text for Save slot 1.
+    [SerializeField] private Text textSave1; // Text for Save slot 1.
     [Space(5)]
     [SerializeField] private Button buttonSave2;
     [SerializeField] private RawImage rawImageSave2;
-    [SerializeField] private TMP_Text textSave2;
+    [SerializeField] private Text textSave2;
     [Space(5)]
     [SerializeField] private Button buttonSave3;
     [SerializeField] private RawImage rawImageSave3;
-    [SerializeField] private TMP_Text textSave3;
+    [SerializeField] private Text textSave3;
     [Space(5)]
     [SerializeField] private Button buttonSave4;
     [SerializeField] private RawImage rawImageSave4;
-    [SerializeField] private TMP_Text textSave4;
+    [SerializeField] private Text textSave4;
     [Space(5)]
     [SerializeField] private Button buttonSave5;
     [SerializeField] private RawImage rawImageSave5;
-    [SerializeField] private TMP_Text textSave5;
+    [SerializeField] private Text textSave5;
     [Space(5)]
     [SerializeField] private Button buttonSave6;
     [SerializeField] private RawImage rawImageSave6;
-    [SerializeField] private TMP_Text textSave6;
+    [SerializeField] private Text textSave6;
     [Space(10)]
     [Header("Page systems")]
     [SerializeField][Tooltip("-->")] private Button right; // Button to navigate to the next page.
     [SerializeField][Tooltip("<--")] private Button left; // Button to navigate to the previous page.
-    [SerializeField] private TMP_InputField inputField; // Input field for selecting a save slot number.
+    [SerializeField] private InputField inputField; // Input field for selecting a save slot number.
 
     private int currentSaveNumber = 1; // The currently selected save slot number.
     private bool firstTime; // Flag to track the first time setup.
@@ -150,8 +149,8 @@ public class SaveMenuManager : MonoBehaviour
     private char ValidateInput(string text, int charIndex, char addedChar)
     {
         // Validate input: Allow only digits to be entered in the input field.
-        if (char.IsDigit(addedChar)) 
-        { 
+        if (char.IsDigit(addedChar))
+        {
             return addedChar; // If the entered character is a digit, allow it.
         }
 
@@ -280,18 +279,18 @@ public class SaveMenuManager : MonoBehaviour
         {
             savePath = ""; // If using PlayerPrefs for saving, set savePath as an empty string.
         }
-        else if(saveCustomInScene.saveCustomObject.localLow)
+        else if (saveCustomInScene.saveCustomObject.localLow)
         {
             savePath = Path.Combine(Application.persistentDataPath, "saves", fileName + ".json"); // If localLow is set, savePath points to the persistent data path.
         }
         else
         {
             // For other cases (not using PlayerPrefs or localLow), determine the save path based on the platform (Unity Editor or other platforms).
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             savePath = Path.Combine(Application.dataPath, "Editor/saves", fileName + ".json");
-        #else
+#else
             savePath = Path.Combine(Application.dataPath, "saves", fileName + ".json");
-        #endif
+#endif
         }
 
         // Output the determined save path to the console for debugging purposes.

@@ -16,8 +16,8 @@ MonoBehaviour:
   gameTime: 0:0:0
   sceneName: Test Scene
   autosaveEnabled: 0
-  saveGameByEvent: 1
-  saveGameByTime: 0
+  saveGameByEvent: 0
+  saveGameByTime: 1
   saveInterval: 60
   gameData: 1
   localLow: 0

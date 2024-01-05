@@ -314,13 +314,30 @@ public static class SaveDataUtility
     public static void EnableAutoSave()
     {
         SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data"); // Load the SaveCustomObject from Resources.
-        saveCustomObject.autosaveEnabled = true; // Set the autosaveEnabled flag to true.
+        
+        if (saveCustomObject != null)
+        {
+            saveCustomObject.autosaveEnabled = true; // Set autosaveEnabled flag to true.
+        }
+        else
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n"); // Log an error if the SaveCustomObject is null.
+        }
     }
 
+    // Disable auto-saving by setting the autosaveEnabled flag to false in SaveCustomObject.
     public static void DisableAutoSave() 
     {
         SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data"); // Load the SaveCustomObject from Resources.
-        saveCustomObject.autosaveEnabled = false; // Set the autosaveEnabled flag to false.
+        
+        if (saveCustomObject != null)
+        {
+            saveCustomObject.autosaveEnabled = false; // Set autosaveEnabled flag to false.
+        }
+        else
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n"); // Log an error if the SaveCustomObject is null.
+        }
     }
 
     // Trigger an autosave event by calling SaveAutoGame() on AutoSaveCustom component.

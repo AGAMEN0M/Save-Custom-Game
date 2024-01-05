@@ -1,5 +1,4 @@
 using System.IO;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,7 +13,7 @@ public class LoadMenuManager : MonoBehaviour
     [SerializeField] private Button cancelButton; // Button to cancel load.
     [Space(10)]
     [Header("Title Systems")]
-    [SerializeField] private TMP_Text titleLoad; // Title text for load menu.
+    [SerializeField] private Text titleLoad; // Title text for load menu.
     public string text = "Load"; // Default load text.
     public string textAutomatic = "Autosave"; // Text for autosave.
     [Space(10)]
@@ -22,37 +21,37 @@ public class LoadMenuManager : MonoBehaviour
     [SerializeField] private string loadPath1; // Path for load slot 1.
     [SerializeField] private Button buttonLoad1; // Button for load slot 1.
     [SerializeField] private RawImage rawImageLoad1; // Image for load slot 1.
-    [SerializeField] private TMP_Text textLoad1; // Text for load slot 1.
+    [SerializeField] private Text textLoad1; // Text for load slot 1.
     [Space(5)]
     [SerializeField] private string loadPath2;
     [SerializeField] private Button buttonLoad2;
     [SerializeField] private RawImage rawImageLoad2;
-    [SerializeField] private TMP_Text textLoad2;
+    [SerializeField] private Text textLoad2;
     [Space(5)]
     [SerializeField] private string loadPath3;
     [SerializeField] private Button buttonLoad3;
     [SerializeField] private RawImage rawImageLoad3;
-    [SerializeField] private TMP_Text textLoad3;
+    [SerializeField] private Text textLoad3;
     [Space(5)]
     [SerializeField] private string loadPath4;
     [SerializeField] private Button buttonLoad4;
     [SerializeField] private RawImage rawImageLoad4;
-    [SerializeField] private TMP_Text textLoad4;
+    [SerializeField] private Text textLoad4;
     [Space(5)]
     [SerializeField] private string loadPath5;
     [SerializeField] private Button buttonLoad5;
     [SerializeField] private RawImage rawImageLoad5;
-    [SerializeField] private TMP_Text textLoad5;
+    [SerializeField] private Text textLoad5;
     [Space(5)]
     [SerializeField] private string loadPath6;
     [SerializeField] private Button buttonLoad6;
     [SerializeField] private RawImage rawImageLoad6;
-    [SerializeField] private TMP_Text textLoad6;
+    [SerializeField] private Text textLoad6;
     [Space(10)]
     [Header("Page systems")]
     [SerializeField][Tooltip("-->")] private Button right; // Button for moving to the next page.
     [SerializeField][Tooltip("<--")] private Button left; // Button for moving to the previous page.
-    [SerializeField] private TMP_InputField inputField; // Input field for specifying load slot.
+    [SerializeField] private InputField inputField; // Input field for specifying load slot.
 
     private int currentLoadNumber = 1; // Current load slot number.
     private bool firstTime; // Flag to determine if it's the first time setting up buttons.
@@ -319,11 +318,11 @@ public class LoadMenuManager : MonoBehaviour
         }
         else
         {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             savePath = Path.Combine(Application.dataPath, "Editor/saves", fileName + ".json"); // In the editor, set a specific path for easy access to saved files.
-        #else
+#else
             savePath = Path.Combine(Application.dataPath, "saves", fileName + ".json"); // For other platforms, use a standard save path within the application data directory.
-        #endif
+#endif
         }
 
         // Output the determined save path for debugging purposes.

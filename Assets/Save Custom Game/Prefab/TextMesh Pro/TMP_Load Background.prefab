@@ -3263,7 +3263,7 @@ GameObject:
   - component: {fileID: 4632807027466657341}
   - component: {fileID: 5139946393236036785}
   m_Layer: 5
-  m_Name: Load Background
+  m_Name: TMP_Load Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

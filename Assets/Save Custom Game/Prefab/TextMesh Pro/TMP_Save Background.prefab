@@ -146,7 +146,7 @@ GameObject:
   - component: {fileID: 6277862087092050393}
   - component: {fileID: 5433053667395874833}
   m_Layer: 5
-  m_Name: Save Background
+  m_Name: TMP_Save Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

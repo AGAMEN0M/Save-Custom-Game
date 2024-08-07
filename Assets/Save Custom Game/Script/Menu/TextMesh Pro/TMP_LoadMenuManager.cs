@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[AddComponentMenu("UI/Save Custom Game/Load Menu Manager (TMP)")]
 public class TMP_LoadMenuManager : MonoBehaviour
 {
     [Header("Load Settings")]

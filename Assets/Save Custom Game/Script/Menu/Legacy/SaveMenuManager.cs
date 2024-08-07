@@ -2,6 +2,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
+[AddComponentMenu("UI/Save Custom Game/Save Menu Manager")]
 public class SaveMenuManager : MonoBehaviour
 {
     [Header("Save Settings")]
@@ -286,11 +287,11 @@ public class SaveMenuManager : MonoBehaviour
         else
         {
             // For other cases (not using PlayerPrefs or localLow), determine the save path based on the platform (Unity Editor or other platforms).
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
             savePath = Path.Combine(Application.dataPath, "Editor/saves", fileName + ".json");
-#else
+        #else
             savePath = Path.Combine(Application.dataPath, "saves", fileName + ".json");
-#endif
+        #endif
         }
 
         // Output the determined save path to the console for debugging purposes.

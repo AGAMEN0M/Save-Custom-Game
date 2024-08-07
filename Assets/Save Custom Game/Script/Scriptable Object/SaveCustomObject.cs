@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEditor;
 
 // This class creates a custom asset in the Unity Editor.
-public class CustomObjectDataCreator
+public class KeyboardControlListCreator
 {
     // Menu item for creating the custom object data asset.
     [MenuItem("Assets/Create/Save Custom Game/Save Custom Object Data")]
@@ -46,6 +46,7 @@ public class SaveCustomObject : ScriptableObject
 {
     [Header("Settings")]
     public byte[] screenshot; // Stores a screenshot as a byte array.
+    public int pixelLimit = 1000; // Pixel limit for screenshot.
     public string gameTime = "00:00:00"; // Tracks the game's time.
     public string sceneName; // Stores the name of the scene.
     [Space(10)]
@@ -96,7 +97,7 @@ public class SaveCustomFloat
 public class SaveCustomInt
 {
     public string intTag; // Identification tag for the int value.
-    public float intValue; // Actual int value to be saved.
+    public int intValue; // Actual int value to be saved.
 }
 
 // Serializable class for saving custom string data.

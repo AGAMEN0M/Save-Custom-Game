@@ -127,12 +127,27 @@ public static class SaveDataUtility
                         return; // Exit the method after setting the value.
                     }
                 }
-                // Throw an exception if the floatTag is not found within the item.
-                throw new KeyNotFoundException($"Float tag '{floatTag}' not found in item '{itemTag}'\n");
+
+                // Float tag not found, create a new one.
+                SaveCustomFloat newCustomFloat = new()
+                {
+                    floatTag = floatTag,
+                    floatValue = newValue
+                };
+
+                customItem.itemFloat.Add(newCustomFloat);
+                return;
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
-        throw new KeyNotFoundException($"Item tag '{itemTag}' not found\n");
+
+        // Item tag not found, create a new item with the float.
+        SaveCustomItem newCustomItem = new()
+        {
+            itemTag = itemTag,
+            itemFloat = new List<SaveCustomFloat> { new() { floatTag = floatTag, floatValue = newValue } }
+        };
+
+        saveObject.saveCustomItems.Add(newCustomItem);
     }
 
     // Set an integer value in SaveCustomObject based on item and int tags.
@@ -155,12 +170,27 @@ public static class SaveDataUtility
                         return; // Exit the method after setting the value.
                     }
                 }
-                // Throw an exception if the intTag is not found within the item.
-                throw new KeyNotFoundException($"Int tag '{intTag}' not found in item '{itemTag}'\n");
+
+                // Int tag not found, create a new one.
+                SaveCustomInt newCustomInt = new()
+                {
+                    intTag = intTag,
+                    intValue = newValue
+                };
+
+                customItem.itemInt.Add(newCustomInt);
+                return;
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
-        throw new KeyNotFoundException($"Item tag '{itemTag}' not found\n");
+
+        // Item tag not found, create a new item with the int.
+        SaveCustomItem newCustomItem = new()
+        {
+            itemTag = itemTag,
+            itemInt = new List<SaveCustomInt> { new() { intTag = intTag, intValue = newValue } }
+        };
+
+        saveObject.saveCustomItems.Add(newCustomItem);
     }
 
     // Set a string value in SaveCustomObject based on item and string tags.
@@ -183,12 +213,27 @@ public static class SaveDataUtility
                         return; // Exit the method after setting the value.
                     }
                 }
-                // Throw an exception if the stringTag is not found within the item.
-                throw new KeyNotFoundException($"String tag '{stringTag}' not found in item '{itemTag}'\n");
+
+                // String tag not found, create a new one.
+                SaveCustomString newCustomString = new()
+                {
+                    stringTag = stringTag,
+                    stringValue = newValue
+                };
+
+                customItem.itemString.Add(newCustomString);
+                return;
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
-        throw new KeyNotFoundException($"Item tag '{itemTag}' not found\n");
+
+        // Item tag not found, create a new item with the string.
+        SaveCustomItem newCustomItem = new()
+        {
+            itemTag = itemTag,
+            itemString = new List<SaveCustomString> { new() { stringTag = stringTag, stringValue = newValue } }
+        };
+
+        saveObject.saveCustomItems.Add(newCustomItem);
     }
 
     // Set a boolean value in SaveCustomObject based on item and bool tags.
@@ -211,12 +256,27 @@ public static class SaveDataUtility
                         return; // Exit the method after setting the value.
                     }
                 }
-                // Throw an exception if the boolTag is not found within the item.
-                throw new KeyNotFoundException($"Bool tag '{boolTag}' not found in item '{itemTag}'\n");
+
+                // Bool tag not found, create a new one.
+                SaveCustomBool newCustomBool = new()
+                {
+                    boolTag = boolTag,
+                    boolValue = newValue
+                };
+
+                customItem.itemBool.Add(newCustomBool);
+                return;
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
-        throw new KeyNotFoundException($"Item tag '{itemTag}' not found\n");
+
+        // Item tag not found, create a new item with the bool.
+        SaveCustomItem newCustomItem = new()
+        {
+            itemTag = itemTag,
+            itemBool = new List<SaveCustomBool> { new() { boolTag = boolTag, boolValue = newValue } }
+        };
+
+        saveObject.saveCustomItems.Add(newCustomItem);
     }
 
     // Capture a screenshot using a target camera and assign it to SaveCustomObject.
@@ -230,11 +290,25 @@ public static class SaveDataUtility
             return; // Exit the method if either parameter is null.
         }
 
-        // Get the width and height of the screen.
-        int width = Screen.width;
-        int height = Screen.height;
+        // Get the original width and height of the screen.
+        int originalWidth = Screen.width;
+        int originalHeight = Screen.height;
 
-        RenderTexture renderTexture = new(width, height, 24); // Create a new render texture with the screen dimensions.
+        // Calculate new width and height that maintains the aspect ratio and fits within the pixel limit.
+        int newWidth, newHeight;
+        float aspectRatio = (float)originalWidth / originalHeight;
+        if (originalWidth > originalHeight)
+        {
+            newWidth = Mathf.Min(originalWidth, saveObject.pixelLimit);
+            newHeight = Mathf.RoundToInt(newWidth / aspectRatio);
+        }
+        else
+        {
+            newHeight = Mathf.Min(originalHeight, saveObject.pixelLimit);
+            newWidth = Mathf.RoundToInt(newHeight * aspectRatio);
+        }
+
+        RenderTexture renderTexture = new(newWidth, newHeight, 24); // Create a new render texture with the calculated dimensions.
         targetCamera.targetTexture = renderTexture; // Set the target texture of the camera to the render texture.
         targetCamera.Render(); // Render the target camera.
         while (!renderTexture.IsCreated()) { Debug.Log("Waiting for camera rendering..."); } // Wait until the render texture is created.
@@ -326,7 +400,7 @@ public static class SaveDataUtility
     }
 
     // Disable auto-saving by setting the autosaveEnabled flag to false in SaveCustomObject.
-    public static void DisableAutoSave() 
+    public static void DisableAutoSave()
     {
         SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data"); // Load the SaveCustomObject from Resources.
         

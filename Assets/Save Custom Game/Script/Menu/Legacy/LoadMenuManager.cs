@@ -2,6 +2,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
+[AddComponentMenu("UI/Save Custom Game/Load Menu Manager")]
 public class LoadMenuManager : MonoBehaviour
 {
     [Header("Load Settings")]
@@ -318,11 +319,11 @@ public class LoadMenuManager : MonoBehaviour
         }
         else
         {
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
             savePath = Path.Combine(Application.dataPath, "Editor/saves", fileName + ".json"); // In the editor, set a specific path for easy access to saved files.
-#else
+        #else
             savePath = Path.Combine(Application.dataPath, "saves", fileName + ".json"); // For other platforms, use a standard save path within the application data directory.
-#endif
+        #endif
         }
 
         // Output the determined save path for debugging purposes.

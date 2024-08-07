@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[AddComponentMenu("UI/Save Custom Game/Save Menu Manager (TMP)")]
 public class TMP_SaveMenuManager : MonoBehaviour
 {
     [Header("Save Settings")]
@@ -280,7 +281,7 @@ public class TMP_SaveMenuManager : MonoBehaviour
         {
             savePath = ""; // If using PlayerPrefs for saving, set savePath as an empty string.
         }
-        else if(saveCustomInScene.saveCustomObject.localLow)
+        else if (saveCustomInScene.saveCustomObject.localLow)
         {
             savePath = Path.Combine(Application.persistentDataPath, "saves", fileName + ".json"); // If localLow is set, savePath points to the persistent data path.
         }

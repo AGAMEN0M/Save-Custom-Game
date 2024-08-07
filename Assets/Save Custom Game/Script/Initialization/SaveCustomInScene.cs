@@ -15,6 +15,17 @@ public class SaveCustomInScene : MonoBehaviour
 
     private float elapsedTime = 0f; // Elapsed time since the start of the game.
 
+    // Resets the save data.
+    public void ResetSave()
+    {
+        elapsedTime = 0f; // reset the elapsed time.
+
+        // Reset various properties in saveCustomObject.
+        saveCustomObject.screenshot = null;
+        saveCustomObject.gameTime = "00:00:00";
+        saveCustomObject.sceneName = "";
+    }
+
     // FixedUpdate is called at fixed intervals, primarily used for physics calculations.
     private void FixedUpdate()
     {
@@ -41,7 +52,8 @@ public class SaveCustomInScene : MonoBehaviour
         int minutes = Mathf.FloorToInt((elapsedTime % 3600f) / 60f);
         int seconds = Mathf.FloorToInt(elapsedTime % 60f);
 
-        gameTime = string.Format($"{hours}:{minutes}:{seconds}"); // Format the calculated time into a string in the "hours:minutes:seconds" format.
+        // Format the calculated time into a string in the "hours:minutes:seconds" format with at least 2 digits for hours, minutes, and seconds.
+        gameTime = string.Format($"{hours:D2}:{minutes:D2}:{seconds:D2}");
     }
 
     // GetCamera method finds and assigns the appropriate camera for capturing the scene.
@@ -77,7 +89,12 @@ public class SaveCustomInScene : MonoBehaviour
     // SaveData method captures a screenshot and saves game data to a file.
     public void SaveData()
     {
-        GetCamera(); // Get the appropriate camera to capture the scene.
+        // Check if the sceneCamera reference is null.
+        if (sceneCamera == null)
+        {
+            GetCamera(); // Get the appropriate camera to capture the scene.
+        }
+
         SaveDataUtility.CaptureScreenshot(saveCustomObject, sceneCamera); // Capture a screenshot and update SaveCustomObject's screenshot data.
 
         // Create a SaveCustomFile object with relevant game data.
@@ -131,6 +148,8 @@ public class SaveCustomInScene : MonoBehaviour
         {
             Debug.LogError($"Error while saving data: {e.Message}"); // Log an error message if there's an exception while saving.
         }
+
+        sceneCamera = null; // Reset the sceneCamera reference.
     }
 
     // LoadData method loads game data from a file or PlayerPrefs

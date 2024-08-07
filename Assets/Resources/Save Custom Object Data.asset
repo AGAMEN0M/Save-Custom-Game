@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Save Custom Object Data
   m_EditorClassIdentifier: 
   screenshot: 
-  gameTime: 0:0:0
-  sceneName: Test Scene
+  pixelLimit: 1000
+  gameTime: 00:00:00
+  sceneName: 
   autosaveEnabled: 0
   saveGameByEvent: 0
   saveGameByTime: 1

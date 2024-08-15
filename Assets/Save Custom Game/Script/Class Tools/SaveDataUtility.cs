@@ -1,130 +1,171 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This utility script provides static methods for managing and 
+ *              accessing save data within a Unity project. It includes functions 
+ *              to retrieve and set various data types (float, int, string, bool) 
+ *              in a `SaveCustomObject`, capture screenshots from a camera, convert 
+ *              textures to sprites, and manage auto-saving. It also handles errors 
+ *              related to missing data and components, ensuring smooth data 
+ *              management and auto-save functionality.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using System.Collections.Generic;
 using UnityEngine;
 
 public static class SaveDataUtility
 {
-    // Retrieve a float value from SaveCustomObject based on item and float tags.
-    public static float GetFloat(SaveCustomObject saveObject, string itemTag, string floatTag)
+    // Load and return the SaveCustomObject from Resources.
+    public static SaveCustomObject GetSaveCustomObject()
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
+        if (saveCustomObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return null;
+        }
+        return saveCustomObject;
+    }
+
+    // Retrieve a float value from SaveCustomObject based on item and float tags.
+    public static float GetFloat(string itemTag, string floatTag)
+    {
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return 0;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom float within the current item.
+                // Find the float with the specified floatTag.
                 foreach (var customFloat in customItem.itemFloat)
                 {
-                    // Check if the current float's tag matches the provided floatTag.
                     if (customFloat.floatTag == floatTag)
                     {
-                        return customFloat.floatValue; // Return the value of the found floatTag.
+                        return customFloat.floatValue;
                     }
                 }
-                // Throw an exception if the floatTag is not found within the item.
                 throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Float tag '{floatTag}' not found in item '{itemTag}'\n");
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
         throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
     }
 
     // Retrieve an integer value from SaveCustomObject based on item and int tags.
-    public static int GetInt(SaveCustomObject saveObject, string itemTag, string intTag)
+    public static int GetInt(string itemTag, string intTag)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return 0;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom int within the current item.
+                // Find the int with the specified intTag.
                 foreach (var customInt in customItem.itemInt)
                 {
-                    // Check if the current int's tag matches the provided intTag.
                     if (customInt.intTag == intTag)
                     {
-                        return (int)customInt.intValue; // Return the value of the found intTag (converted to int).
+                        return customInt.intValue;
                     }
                 }
-                // Throw an exception if the intTag is not found within the item.
                 throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Int tag '{intTag}' not found in item '{itemTag}'\n");
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
         throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
     }
 
     // Retrieve a string value from SaveCustomObject based on item and string tags.
-    public static string GetString(SaveCustomObject saveObject, string itemTag, string stringTag)
+    public static string GetString(string itemTag, string stringTag)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return "Error: SaveCustomObject is null!";
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom string within the current item.
+                // Find the string with the specified stringTag.
                 foreach (var customString in customItem.itemString)
                 {
-                    // Check if the current string's tag matches the provided stringTag.
                     if (customString.stringTag == stringTag)
                     {
-                        return customString.stringValue; // Return the value of the found stringTag.
+                        return customString.stringValue;
                     }
                 }
-                // Throw an exception if the stringTag is not found within the item.
                 throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - String tag '{stringTag}' not found in item '{itemTag}'\n");
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
         throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
     }
 
     // Retrieve a boolean value from SaveCustomObject based on item and bool tags.
-    public static bool GetBool(SaveCustomObject saveObject, string itemTag, string boolTag)
+    public static bool GetBool(string itemTag, string boolTag)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return false;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom bool within the current item.
+                // Find the bool with the specified boolTag.
                 foreach (var customBool in customItem.itemBool)
                 {
-                    // Check if the current bool's tag matches the provided boolTag.
                     if (customBool.boolTag == boolTag)
                     {
-                        return customBool.boolValue; // Return the value of the found boolTag.
+                        return customBool.boolValue;
                     }
                 }
-                // Throw an exception if the boolTag is not found within the item.
                 throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Bool tag '{boolTag}' not found in item '{itemTag}'\n");
             }
         }
-        // Throw an exception if the itemTag is not found in the SaveCustomObject.
         throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
     }
 
     // Set a float value in SaveCustomObject based on item and float tags.
-    public static void SetFloat(SaveCustomObject saveObject, string itemTag, string floatTag, float newValue)
+    public static void SetFloat(string itemTag, string floatTag, float newValue)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom float within the current item.
+                // Find the float with the specified floatTag.
                 foreach (var customFloat in customItem.itemFloat)
                 {
-                    // Check if the current float's tag matches the provided floatTag.
                     if (customFloat.floatTag == floatTag)
                     {
-                        // Set the value of the found floatTag to the newValue.
                         customFloat.floatValue = newValue;
-                        return; // Exit the method after setting the value.
+                        return;
                     }
                 }
 
@@ -151,23 +192,27 @@ public static class SaveDataUtility
     }
 
     // Set an integer value in SaveCustomObject based on item and int tags.
-    public static void SetInt(SaveCustomObject saveObject, string itemTag, string intTag, int newValue)
+    public static void SetInt(string itemTag, string intTag, int newValue)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom int within the current item.
+                // Find the int with the specified intTag.
                 foreach (var customInt in customItem.itemInt)
                 {
-                    // Check if the current int's tag matches the provided intTag.
                     if (customInt.intTag == intTag)
                     {
-                        // Set the value of the found intTag to the newValue.
                         customInt.intValue = newValue;
-                        return; // Exit the method after setting the value.
+                        return;
                     }
                 }
 
@@ -194,23 +239,27 @@ public static class SaveDataUtility
     }
 
     // Set a string value in SaveCustomObject based on item and string tags.
-    public static void SetString(SaveCustomObject saveObject, string itemTag, string stringTag, string newValue)
+    public static void SetString(string itemTag, string stringTag, string newValue)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom string within the current item.
+                // Find the string with the specified stringTag.
                 foreach (var customString in customItem.itemString)
                 {
-                    // Check if the current string's tag matches the provided stringTag.
                     if (customString.stringTag == stringTag)
                     {
-                        // Set the value of the found stringTag to the newValue.
                         customString.stringValue = newValue;
-                        return; // Exit the method after setting the value.
+                        return;
                     }
                 }
 
@@ -237,23 +286,27 @@ public static class SaveDataUtility
     }
 
     // Set a boolean value in SaveCustomObject based on item and bool tags.
-    public static void SetBool(SaveCustomObject saveObject, string itemTag, string boolTag, bool newValue)
+    public static void SetBool(string itemTag, string boolTag, bool newValue)
     {
-        // Iterate through each custom item in the SaveCustomObject.
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
+        {
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return;
+        }
+
+        // Find the item with the specified itemTag.
         foreach (var customItem in saveObject.saveCustomItems)
         {
-            // Check if the current item's tag matches the provided itemTag.
             if (customItem.itemTag == itemTag)
             {
-                // Iterate through each custom bool within the current item.
+                // Find the bool with the specified boolTag.
                 foreach (var customBool in customItem.itemBool)
                 {
-                    // Check if the current bool's tag matches the provided boolTag.
                     if (customBool.boolTag == boolTag)
                     {
-                        // Set the value of the found boolTag to the newValue.
                         customBool.boolValue = newValue;
-                        return; // Exit the method after setting the value.
+                        return;
                     }
                 }
 
@@ -280,13 +333,20 @@ public static class SaveDataUtility
     }
 
     // Capture a screenshot using a target camera and assign it to SaveCustomObject.
-    public static void CaptureScreenshot(SaveCustomObject saveObject, Camera targetCamera)
+    public static void CaptureScreenshot(Camera targetCamera)
     {
-        // Check if either SaveCustomObject or targetCamera is not defined.
-        if (saveObject == null || targetCamera == null)
+        SaveCustomObject saveObject = GetSaveCustomObject();
+        if (saveObject == null)
         {
-            // Log an error if SaveCustomObject or targetCamera is not defined.
-            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject or Camera are not defined!\n");
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+            return;
+        }
+
+        // Check if either targetCamera is not defined.
+        if (targetCamera == null)
+        {
+            // Log an error if targetCamera is not defined.
+            Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - Camera are not defined!\n");
             return; // Exit the method if either parameter is null.
         }
 
@@ -358,36 +418,40 @@ public static class SaveDataUtility
     }
 
     // Find and assign the SaveCustomInScene component if found in the scene.
-    public static void GetComponentSaveCustomInScene(ref SaveCustomInScene saveCustomInScene)
+    public static SaveCustomInScene GetComponentSaveCustomInScene()
     {
-        GameObject saveCustomObject = GameObject.Find("[Save Custom Object]"); // Find the GameObject named "[Save Custom Object]" in the scene.
+        // Find the GameObject named "[Save Custom Object]" in the scene.
+        GameObject saveCustomObject = GameObject.Find("[Save Custom Object]");
 
         // Check if the GameObject is found in the scene.
         if (saveCustomObject != null)
         {
             // Attempt to get the SaveCustomInScene component attached to the GameObject.
-            if (saveCustomObject.TryGetComponent(out saveCustomInScene))
+            if (saveCustomObject.TryGetComponent(out SaveCustomInScene saveCustomInScene))
             {
                 // Log a success message if the component is assigned successfully.
                 Debug.Log($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomInScene script has been assigned successfully!\n");
+                return saveCustomInScene;
             }
             else
             {
                 // Log an error if the SaveCustomInScene component is not found in the GameObject.
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomInScene not found in Save Custom Object!\n");
+                return null;
             }
         }
         else
         {
             // Log an error if the GameObject named "[Save Custom Object]" is not found in the scene.
             Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - Save Custom Object not found!\n");
+            return null;
         }
     }
 
     // Enable auto-saving by setting the autosaveEnabled flag to true in SaveCustomObject.
     public static void EnableAutoSave()
     {
-        SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data"); // Load the SaveCustomObject from Resources.
+        SaveCustomObject saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
         
         if (saveCustomObject != null)
         {
@@ -402,7 +466,7 @@ public static class SaveDataUtility
     // Disable auto-saving by setting the autosaveEnabled flag to false in SaveCustomObject.
     public static void DisableAutoSave()
     {
-        SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data"); // Load the SaveCustomObject from Resources.
+        SaveCustomObject saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
         
         if (saveCustomObject != null)
         {

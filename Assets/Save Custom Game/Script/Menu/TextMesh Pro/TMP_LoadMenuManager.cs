@@ -1,7 +1,19 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: The TMP_LoadMenuManager script manages the user interface for loading saved game data in Unity.
+ *              It handles various UI elements, including buttons and text fields, to allow users to load saved
+ *              game states from different slots. The script also supports functionalities like updating the 
+ *              load slot names, confirming the load process, and managing multiple load pages. The saved data can
+ *              be fetched from either PlayerPrefs or external files, with appropriate checks and UI updates based
+ *              on whether data is present in the specified slots.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
+using UnityEngine.UI;
+using UnityEngine;
 using System.IO;
 using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 
 [AddComponentMenu("UI/Save Custom Game/Load Menu Manager (TMP)")]
 public class TMP_LoadMenuManager : MonoBehaviour
@@ -60,7 +72,7 @@ public class TMP_LoadMenuManager : MonoBehaviour
 
     private void OnEnable()
     {
-        SaveDataUtility.GetComponentSaveCustomInScene(ref saveCustomInScene); // Fetching the SaveCustomInScene component reference when the object is enabled.
+        saveCustomInScene = SaveDataUtility.GetComponentSaveCustomInScene(); // Fetching the SaveCustomInScene component reference when the object is enabled.
         if (PlayerPrefs.HasKey("SaveMenuManager")) { currentLoadNumber = PlayerPrefs.GetInt("SaveMenuManager"); } // Check if there's a saved value for the current load number and retrieve it from PlayerPrefs.
 
         // Set up buttons, input fields, load names, and title on enable.

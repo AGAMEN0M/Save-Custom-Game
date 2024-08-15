@@ -1,3 +1,14 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script automatically selects a specified button when the UI element 
+ *              it's attached to is enabled. It is useful in UI navigation, ensuring that 
+ *              the correct button is highlighted and ready for interaction by default.
+ *              The script clears any previously selected UI object before selecting 
+ *              the desired button.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine;

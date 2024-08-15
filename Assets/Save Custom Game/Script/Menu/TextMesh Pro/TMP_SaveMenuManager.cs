@@ -1,7 +1,20 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: The TMP_SaveMenuManager script manages the save system in a Unity game, specifically designed 
+ *              for a menu with six save slots. It handles the UI elements like buttons, text fields, and images
+ *              associated with each save slot, allowing players to save their game progress, confirm overwrites, 
+ *              and load previous saves. The script supports navigation between different save slots using buttons 
+ *              and an input field, and it displays information based on the current save slot. Additionally, it manages
+ *              the save file paths, supports saving in PlayerPrefs or local files, and handles displaying confirmation
+ *              panels when overwriting saves.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
+using UnityEngine.UI;
+using UnityEngine;
 using System.IO;
 using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 
 [AddComponentMenu("UI/Save Custom Game/Save Menu Manager (TMP)")]
 public class TMP_SaveMenuManager : MonoBehaviour
@@ -54,7 +67,7 @@ public class TMP_SaveMenuManager : MonoBehaviour
 
     private void OnEnable()
     {
-        SaveDataUtility.GetComponentSaveCustomInScene(ref saveCustomInScene); // Get the SaveCustomInScene component if not assigned.
+        saveCustomInScene = SaveDataUtility.GetComponentSaveCustomInScene(); // Get the SaveCustomInScene component if not assigned.
         if (PlayerPrefs.HasKey("SaveMenuManager")) { currentSaveNumber = PlayerPrefs.GetInt("SaveMenuManager"); } // Retrieve the last selected save slot number from PlayerPrefs.
 
         // Setup buttons, input field, initial save name, and title display.

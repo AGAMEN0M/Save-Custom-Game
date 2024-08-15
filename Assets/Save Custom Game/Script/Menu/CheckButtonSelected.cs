@@ -1,3 +1,14 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script ensures that a default button is selected when no other UI 
+ *              elements are currently selected or when the currently selected element is 
+ *              inactive. It checks in each frame whether the EventSystem has a selected 
+ *              object and if it is active in the hierarchy, defaulting to a specified button 
+ *              if these conditions are not met. This helps maintain consistent UI navigation.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine;

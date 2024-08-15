@@ -1,3 +1,16 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script defines a custom ScriptableObject class, SaveCustomObject,
+ *              which allows the storage and management of various game-related settings 
+ *              and data types, such as screenshots, game time, scene names, and customizable items. 
+ *              The script also includes a custom Unity Editor menu item that enables the creation 
+ *              of this object as an asset, ensuring that it can be easily instantiated and utilized 
+ *              within the Unity project. The asset creation process handles scenarios like folder 
+ *              creation and potential asset replacement.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using System.Collections.Generic;
 using UnityEngine;
 

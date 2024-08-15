@@ -1,3 +1,16 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script manages an auto-save system for a game, saving the
+ *              game state at regular intervals. It references a `SaveCustomInScene` 
+ *              component to handle the actual save process. The script allows
+ *              customization of the auto-save interval and cycles through a set
+ *              of save slots to maintain multiple auto-save files. Autosaving can 
+ *              be disabled via settings, and the script ensures that saves do not 
+ *              occur if auto-save is turned off.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using UnityEngine;
 
 public class AutoSaveCustom : MonoBehaviour
@@ -14,7 +27,7 @@ public class AutoSaveCustom : MonoBehaviour
         // Check if the SaveCustomInScene reference is not assigned.
         if (saveCustomInScene == null)
         {
-            SaveDataUtility.GetComponentSaveCustomInScene(ref saveCustomInScene); // Get the SaveCustomInScene component if it's not assigned.
+            saveCustomInScene = SaveDataUtility.GetComponentSaveCustomInScene(); // Get the SaveCustomInScene component if it's not assigned.
         }
 
         saveCustomInScene.saveCustomObject.autosaveEnabled = false; // Disable autosave at the start.

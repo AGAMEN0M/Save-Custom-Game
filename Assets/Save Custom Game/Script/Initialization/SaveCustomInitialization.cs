@@ -1,3 +1,15 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script handles the initialization of custom save functionality 
+ *              during runtime. It loads a `SaveCustomObject` from the Resources 
+ *              folder and ensures that a GameObject with `SaveCustomInScene` and 
+ *              `AutoSaveCustom` components is created to manage game saving and 
+ *              auto-saving. The GameObject is marked to persist across scene loads, 
+ *              enabling consistent save management throughout the game.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using UnityEngine;
 
 public class SaveCustomInitialization

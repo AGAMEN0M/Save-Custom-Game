@@ -1,5 +1,17 @@
-using System.Diagnostics;
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This utility class provides a method to retrieve detailed information 
+ *              about the calling method, including the file path and line number within 
+ *              the project. The information is captured using a stack trace, and 
+ *              the file path is adjusted to be relative to the project's Assets folder. 
+ *              It is particularly useful for debugging and logging, offering insights 
+ *              into where an error or method call originated.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 public static class ExceptionUtility
 {

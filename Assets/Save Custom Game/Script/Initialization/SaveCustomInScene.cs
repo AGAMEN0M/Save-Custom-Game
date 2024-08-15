@@ -1,8 +1,20 @@
-using System;
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script manages the saving and loading of game data within a scene. 
+ *              It includes functionality to track in-game time, capture screenshots, 
+ *              and save or load data such as scene information, elapsed time, and custom items. 
+ *              The script supports multiple save paths and can store data locally or in PlayerPrefs. 
+ *              It also handles resetting save data and ensures the correct camera is used for 
+ *              capturing screenshots.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
+using System;
 using UnityEngine.SceneManagement;
+using UnityEngine;
 
 public class SaveCustomInScene : MonoBehaviour
 {
@@ -95,7 +107,7 @@ public class SaveCustomInScene : MonoBehaviour
             GetCamera(); // Get the appropriate camera to capture the scene.
         }
 
-        SaveDataUtility.CaptureScreenshot(saveCustomObject, sceneCamera); // Capture a screenshot and update SaveCustomObject's screenshot data.
+        SaveDataUtility.CaptureScreenshot(sceneCamera); // Capture a screenshot and update SaveCustomObject's screenshot data.
 
         // Create a SaveCustomFile object with relevant game data.
         SaveCustomFile data = new()

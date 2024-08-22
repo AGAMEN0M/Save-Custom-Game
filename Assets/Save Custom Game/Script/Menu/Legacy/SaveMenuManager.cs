@@ -11,6 +11,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+using SaveCustomGame;
 using UnityEngine.UI;
 using UnityEngine;
 using System.IO;

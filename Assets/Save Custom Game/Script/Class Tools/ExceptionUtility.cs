@@ -13,54 +13,57 @@
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 
-public static class ExceptionUtility
+namespace SaveCustomGame
 {
-    public static string GetCallingMethodInfo()
+    public static class ExceptionUtility
     {
-        var stackTrace = new StackTrace(true); // Create a stack trace to capture method call information.
-        var frames = stackTrace.GetFrames(); // Get the stack frames from the stack trace.
-
-        if (frames != null)
+        public static string GetCallingMethodInfo()
         {
-            bool foundSaveDataUtility = false; // Flag to track if SaveDataUtility methods are encountered.
+            var stackTrace = new StackTrace(true); // Create a stack trace to capture method call information.
+            var frames = stackTrace.GetFrames(); // Get the stack frames from the stack trace.
 
-            // Iterate through each stack frame.
-            foreach (var frame in frames)
+            if (frames != null)
             {
-                // Get the method information from the stack frame.
-                var method = frame.GetMethod();
-                var declaringType = method?.DeclaringType;
+                bool foundSaveDataUtility = false; // Flag to track if SaveDataUtility methods are encountered.
 
-                if (declaringType != null)
+                // Iterate through each stack frame.
+                foreach (var frame in frames)
                 {
-                    var typeName = declaringType.FullName;
+                    // Get the method information from the stack frame.
+                    var method = frame.GetMethod();
+                    var declaringType = method?.DeclaringType;
 
-                    // Check if the method is not from SaveDataUtility or ExceptionUtility.
-                    if (typeName != typeof(SaveDataUtility).FullName && typeName != typeof(ExceptionUtility).FullName)
+                    if (declaringType != null)
                     {
-                        // Retrieve file name and line number information from the stack frame.
-                        var fileName = frame.GetFileName();
-                        var lineNumber = frame.GetFileLineNumber();
+                        var typeName = declaringType.FullName;
 
-                        // Ensure the file name and line number are valid.
-                        if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
+                        // Check if the method is not from SaveDataUtility or ExceptionUtility.
+                        if (typeName != typeof(SaveDataUtility).FullName && typeName != typeof(ExceptionUtility).FullName)
                         {
-                            var filePath = Regex.Replace(fileName, @"^.*?Assets", "Assets"); // Modify file path to show it relative to the project's Assets folder.
-                            return $"(at {filePath}:{lineNumber})"; // Format and return the method call's file path and line number.
+                            // Retrieve file name and line number information from the stack frame.
+                            var fileName = frame.GetFileName();
+                            var lineNumber = frame.GetFileLineNumber();
+
+                            // Ensure the file name and line number are valid.
+                            if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
+                            {
+                                var filePath = Regex.Replace(fileName, @"^.*?Assets", "Assets"); // Modify file path to show it relative to the project's Assets folder.
+                                return $"(at {filePath}:{lineNumber})"; // Format and return the method call's file path and line number.
+                            }
                         }
-                    }
-                    else if (typeName == typeof(SaveDataUtility).FullName)
-                    {
-                        foundSaveDataUtility = true; // Flag that SaveDataUtility methods have been encountered.
-                    }
-                    else if (typeName == typeof(ExceptionUtility).FullName && foundSaveDataUtility)
-                    {
-                        break; // Stop processing when ExceptionUtility methods are encountered after SaveDataUtility.
+                        else if (typeName == typeof(SaveDataUtility).FullName)
+                        {
+                            foundSaveDataUtility = true; // Flag that SaveDataUtility methods have been encountered.
+                        }
+                        else if (typeName == typeof(ExceptionUtility).FullName && foundSaveDataUtility)
+                        {
+                            break; // Stop processing when ExceptionUtility methods are encountered after SaveDataUtility.
+                        }
                     }
                 }
             }
-        }
 
-        return string.Empty; // Return an empty string if method call information couldn't be retrieved.
+            return string.Empty; // Return an empty string if method call information couldn't be retrieved.
+        }
     }
 }

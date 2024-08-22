@@ -11,6 +11,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+using SaveCustomGame;
 using UnityEngine;
 
 public class AutoSaveCustom : MonoBehaviour

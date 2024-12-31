@@ -10,6 +10,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 

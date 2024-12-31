@@ -11,6 +11,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -41,7 +42,7 @@ public class KeyboardControlListCreator
         }
 
         // Create an instance of SaveCustomObject and save it as an asset.
-        SaveCustomObject asset = ScriptableObject.CreateInstance<SaveCustomObject>();
+        var asset = ScriptableObject.CreateInstance<SaveCustomObject>();
         AssetDatabase.CreateAsset(asset, assetPath);
         EditorUtility.SetDirty(asset);
         AssetDatabase.SaveAssets();

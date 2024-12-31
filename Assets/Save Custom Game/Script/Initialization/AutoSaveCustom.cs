@@ -11,9 +11,11 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using SaveCustomGame;
 using UnityEngine;
 
+[AddComponentMenu("UI/Save Custom Game/In Background/Auto Save Custom")]
 public class AutoSaveCustom : MonoBehaviour
 {
     [Header("Auto Save Settings")]

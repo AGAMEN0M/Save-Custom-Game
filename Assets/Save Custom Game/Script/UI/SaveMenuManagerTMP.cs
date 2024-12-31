@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: The TMP_SaveMenuManager script manages the save system in a Unity game, specifically designed 
+ * Description: The SaveMenuManagerTMP script manages the save system in a Unity game, specifically designed 
  *              for a menu with six save slots. It handles the UI elements like buttons, text fields, and images
  *              associated with each save slot, allowing players to save their game progress, confirm overwrites, 
  *              and load previous saves. The script supports navigation between different save slots using buttons 
@@ -11,6 +11,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using SaveCustomGame;
 using UnityEngine.UI;
 using UnityEngine;
@@ -18,7 +19,7 @@ using System.IO;
 using TMPro;
 
 [AddComponentMenu("UI/Save Custom Game/Save Menu Manager (TMP)")]
-public class TMP_SaveMenuManager : MonoBehaviour
+public class SaveMenuManagerTMP : MonoBehaviour
 {
     [Header("Save Settings")]
     [SerializeField] private SaveCustomInScene saveCustomInScene; // Variables related to save settings.

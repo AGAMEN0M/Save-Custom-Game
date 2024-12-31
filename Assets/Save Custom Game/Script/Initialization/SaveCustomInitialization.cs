@@ -10,6 +10,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using UnityEngine;
 
 public class SaveCustomInitialization
@@ -34,8 +35,8 @@ public class SaveCustomInitialization
         GameObject saveCustomGameObject = new("[Save Custom Object]"); // Create a new GameObject named "[Save Custom Object]".
 
         // Add SaveCustomInScene and AutoSaveCustom components to the GameObject.
-        SaveCustomInScene saveCustomInScene = saveCustomGameObject.AddComponent<SaveCustomInScene>();
-        AutoSaveCustom autoSaveCustom = saveCustomGameObject.AddComponent<AutoSaveCustom>();
+        var saveCustomInScene = saveCustomGameObject.AddComponent<SaveCustomInScene>();
+        var autoSaveCustom = saveCustomGameObject.AddComponent<AutoSaveCustom>();
 
         // Assign references between components and objects.
         saveCustomInScene.saveCustomObject = saveCustomObject;

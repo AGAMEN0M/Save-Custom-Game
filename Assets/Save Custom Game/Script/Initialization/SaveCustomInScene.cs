@@ -10,13 +10,15 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using SaveCustomGame;
+using UnityEngine;
 using System.IO;
 using System;
-using SaveCustomGame;
-using UnityEngine.SceneManagement;
-using UnityEngine;
 
+[AddComponentMenu("UI/Save Custom Game/In Background/Save Custom In Scene")]
 public class SaveCustomInScene : MonoBehaviour
 {
     public SaveCustomObject saveCustomObject; // Reference to the SaveCustomObject.
@@ -72,7 +74,7 @@ public class SaveCustomInScene : MonoBehaviour
     // GetCamera method finds and assigns the appropriate camera for capturing the scene.
     private void GetCamera()
     {
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player"); // Find the GameObject tagged as "Player" in the scene.
+        var playerObject = GameObject.FindGameObjectWithTag("Player"); // Find the GameObject tagged as "Player" in the scene.
 
         // Check if the playerObject is not null.
         if (playerObject != null)
@@ -80,7 +82,7 @@ public class SaveCustomInScene : MonoBehaviour
             // Try to get the Camera component from the playerObject.
             if (!playerObject.TryGetComponent<Camera>(out var playerCamera))
             {
-                Camera[] childCameras = playerObject.GetComponentsInChildren<Camera>(); // If the Camera component is not found directly, try to get child Cameras.
+                var childCameras = playerObject.GetComponentsInChildren<Camera>(); // If the Camera component is not found directly, try to get child Cameras.
                 if (childCameras.Length > 0) { playerCamera = childCameras[0]; } // If child cameras exist, assign the first one found.
             }
 
@@ -92,7 +94,7 @@ public class SaveCustomInScene : MonoBehaviour
         // If no Camera is found yet, find any Camera in the scene.
         if (sceneCamera == null)
         {
-            Camera[] allCameras = FindObjectsOfType<Camera>();
+            var allCameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
             if (allCameras.Length > 0) { sceneCamera = allCameras[0]; } // If any Cameras are found, assign the first one.
         }
 

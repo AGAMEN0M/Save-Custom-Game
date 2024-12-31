@@ -1,7 +1,20 @@
+/*
+ * ---------------------------------------------------------------------------
+ * Description: This script manages auto-save functionality and allows toggling the 
+ *              active state of specific GameObjects. It enables auto-save and triggers 
+ *              a save event when a specified key is pressed and disables auto-save with 
+ *              another key. Additionally, it provides a method to toggle the activation 
+ *              state of GameObjects in a predefined array.
+ * Author: Lucas Gomes Cecchini
+ * Pseudonym: AGAMENOM
+ * ---------------------------------------------------------------------------
+*/
+
 using SaveCustomGame;
 using UnityEngine;
 
-public class ScriptTest : MonoBehaviour
+[AddComponentMenu("UI/Save Custom Game/In Background/Test Save Custom")]
+public class TestSaveCustom : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private KeyCode activateAndSave = KeyCode.Space; // Key to activate and trigger auto-save.

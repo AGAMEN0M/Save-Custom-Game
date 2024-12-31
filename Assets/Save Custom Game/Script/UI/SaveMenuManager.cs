@@ -11,12 +11,13 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using SaveCustomGame;
 using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
 
-[AddComponentMenu("UI/Save Custom Game/Save Menu Manager")]
+[AddComponentMenu("UI/Save Custom Game/Save Menu Manager (Legacy)")]
 public class SaveMenuManager : MonoBehaviour
 {
     [Header("Save Settings")]

@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: The LoadMenuManager script manages the user interface for loading saved game data in Unity.
+ * Description: The LoadMenuManagerTMP script manages the user interface for loading saved game data in Unity.
  *              It handles various UI elements, including buttons and text fields, to allow users to load saved
  *              game states from different slots. The script also supports functionalities like updating the 
  *              load slot names, confirming the load process, and managing multiple load pages. The saved data can
@@ -10,13 +10,15 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using SaveCustomGame;
 using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
+using TMPro;
 
-[AddComponentMenu("UI/Save Custom Game/Load Menu Manager")]
-public class LoadMenuManager : MonoBehaviour
+[AddComponentMenu("UI/Save Custom Game/Load Menu Manager (TMP)")]
+public class LoadMenuManagerTMP : MonoBehaviour
 {
     [Header("Load Settings")]
     [SerializeField] private SaveCustomInScene saveCustomInScene; // Reference to SaveCustomInScene for loading.
@@ -27,7 +29,7 @@ public class LoadMenuManager : MonoBehaviour
     [SerializeField] private Button cancelButton; // Button to cancel load.
     [Space(10)]
     [Header("Title Systems")]
-    [SerializeField] private Text titleLoad; // Title text for load menu.
+    [SerializeField] private TMP_Text titleLoad; // Title text for load menu.
     public string text = "Load"; // Default load text.
     public string textAutomatic = "Autosave"; // Text for autosave.
     [Space(10)]
@@ -35,37 +37,37 @@ public class LoadMenuManager : MonoBehaviour
     [SerializeField] private string loadPath1; // Path for load slot 1.
     [SerializeField] private Button buttonLoad1; // Button for load slot 1.
     [SerializeField] private RawImage rawImageLoad1; // Image for load slot 1.
-    [SerializeField] private Text textLoad1; // Text for load slot 1.
+    [SerializeField] private TMP_Text textLoad1; // Text for load slot 1.
     [Space(5)]
     [SerializeField] private string loadPath2;
     [SerializeField] private Button buttonLoad2;
     [SerializeField] private RawImage rawImageLoad2;
-    [SerializeField] private Text textLoad2;
+    [SerializeField] private TMP_Text textLoad2;
     [Space(5)]
     [SerializeField] private string loadPath3;
     [SerializeField] private Button buttonLoad3;
     [SerializeField] private RawImage rawImageLoad3;
-    [SerializeField] private Text textLoad3;
+    [SerializeField] private TMP_Text textLoad3;
     [Space(5)]
     [SerializeField] private string loadPath4;
     [SerializeField] private Button buttonLoad4;
     [SerializeField] private RawImage rawImageLoad4;
-    [SerializeField] private Text textLoad4;
+    [SerializeField] private TMP_Text textLoad4;
     [Space(5)]
     [SerializeField] private string loadPath5;
     [SerializeField] private Button buttonLoad5;
     [SerializeField] private RawImage rawImageLoad5;
-    [SerializeField] private Text textLoad5;
+    [SerializeField] private TMP_Text textLoad5;
     [Space(5)]
     [SerializeField] private string loadPath6;
     [SerializeField] private Button buttonLoad6;
     [SerializeField] private RawImage rawImageLoad6;
-    [SerializeField] private Text textLoad6;
+    [SerializeField] private TMP_Text textLoad6;
     [Space(10)]
     [Header("Page systems")]
     [SerializeField][Tooltip("-->")] private Button right; // Button for moving to the next page.
     [SerializeField][Tooltip("<--")] private Button left; // Button for moving to the previous page.
-    [SerializeField] private InputField inputField; // Input field for specifying load slot.
+    [SerializeField] private TMP_InputField inputField; // Input field for specifying load slot.
 
     private int currentLoadNumber = 1; // Current load slot number.
     private bool firstTime; // Flag to determine if it's the first time setting up buttons.

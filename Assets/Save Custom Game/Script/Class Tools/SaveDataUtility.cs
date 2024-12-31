@@ -11,6 +11,7 @@
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,7 +22,7 @@ namespace SaveCustomGame
         // Load and return the SaveCustomObject from Resources.
         public static SaveCustomObject GetSaveCustomObject()
         {
-            SaveCustomObject saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
+            var saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
             if (saveCustomObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -33,7 +34,7 @@ namespace SaveCustomGame
         // Retrieve a float value from SaveCustomObject based on item and float tags.
         public static float GetFloat(string itemTag, string floatTag)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -62,7 +63,7 @@ namespace SaveCustomGame
         // Retrieve an integer value from SaveCustomObject based on item and int tags.
         public static int GetInt(string itemTag, string intTag)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -91,7 +92,7 @@ namespace SaveCustomGame
         // Retrieve a string value from SaveCustomObject based on item and string tags.
         public static string GetString(string itemTag, string stringTag)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -120,7 +121,7 @@ namespace SaveCustomGame
         // Retrieve a boolean value from SaveCustomObject based on item and bool tags.
         public static bool GetBool(string itemTag, string boolTag)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -149,7 +150,7 @@ namespace SaveCustomGame
         // Set a float value in SaveCustomObject based on item and float tags.
         public static void SetFloat(string itemTag, string floatTag, float newValue)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -196,7 +197,7 @@ namespace SaveCustomGame
         // Set an integer value in SaveCustomObject based on item and int tags.
         public static void SetInt(string itemTag, string intTag, int newValue)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -243,7 +244,7 @@ namespace SaveCustomGame
         // Set a string value in SaveCustomObject based on item and string tags.
         public static void SetString(string itemTag, string stringTag, string newValue)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -290,7 +291,7 @@ namespace SaveCustomGame
         // Set a boolean value in SaveCustomObject based on item and bool tags.
         public static void SetBool(string itemTag, string boolTag, bool newValue)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -337,7 +338,7 @@ namespace SaveCustomGame
         // Capture a screenshot using a target camera and assign it to SaveCustomObject.
         public static void CaptureScreenshot(Camera targetCamera)
         {
-            SaveCustomObject saveObject = GetSaveCustomObject();
+            var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
                 Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
@@ -423,7 +424,7 @@ namespace SaveCustomGame
         public static SaveCustomInScene GetComponentSaveCustomInScene()
         {
             // Find the GameObject named "[Save Custom Object]" in the scene.
-            GameObject saveCustomObject = GameObject.Find("[Save Custom Object]");
+            var saveCustomObject = GameObject.Find("[Save Custom Object]");
 
             // Check if the GameObject is found in the scene.
             if (saveCustomObject != null)
@@ -453,7 +454,7 @@ namespace SaveCustomGame
         // Enable auto-saving by setting the autosaveEnabled flag to true in SaveCustomObject.
         public static void EnableAutoSave()
         {
-            SaveCustomObject saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
+            var saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
 
             if (saveCustomObject != null)
             {
@@ -468,7 +469,7 @@ namespace SaveCustomGame
         // Disable auto-saving by setting the autosaveEnabled flag to false in SaveCustomObject.
         public static void DisableAutoSave()
         {
-            SaveCustomObject saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
+            var saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
 
             if (saveCustomObject != null)
             {
@@ -483,7 +484,7 @@ namespace SaveCustomGame
         // Trigger an autosave event by calling SaveAutoGame() on AutoSaveCustom component.
         public static void SaveEvent()
         {
-            GameObject saveCustomObject = GameObject.Find("[Save Custom Object]"); // Find the GameObject named "[Save Custom Object]" in the scene.
+            var saveCustomObject = GameObject.Find("[Save Custom Object]"); // Find the GameObject named "[Save Custom Object]" in the scene.
 
             // Check if the GameObject is found in the scene.
             if (saveCustomObject != null)

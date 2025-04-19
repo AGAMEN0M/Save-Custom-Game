@@ -15,7 +15,7 @@ GameObject:
   m_Layer: 5
   m_Name: Save Background (TMP)
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2800000, guid: e0ce6fddb07efbe4683d236fde7d2e39, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1

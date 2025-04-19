@@ -1,12 +1,13 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: The SaveMenuManagerTMP script manages the save system in a Unity game, specifically designed 
- *              for a menu with six save slots. It handles the UI elements like buttons, text fields, and images
- *              associated with each save slot, allowing players to save their game progress, confirm overwrites, 
- *              and load previous saves. The script supports navigation between different save slots using buttons 
- *              and an input field, and it displays information based on the current save slot. Additionally, it manages
- *              the save file paths, supports saving in PlayerPrefs or local files, and handles displaying confirmation
- *              panels when overwriting saves.
+ * Description: The SaveMenuManagerTMP script manages the UI system for saving game progress 
+ *              using up to six save slots per page in a Unity project. It handles user 
+ *              interactions with UI elements such as buttons, text labels, thumbnails, 
+ *              and input fields. The script supports both PlayerPrefs and file-based 
+ *              saving, manages navigation between slot pages, and updates UI dynamically 
+ *              based on save availability. It also provides confirmation dialogs to 
+ *              prevent accidental overwrites and displays contextual save information, 
+ *              including screenshots and timestamps.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -18,26 +19,29 @@ using UnityEngine;
 using System.IO;
 using TMPro;
 
+using static SaveCustomGame.SaveDataUtility;
+
 [AddComponentMenu("UI/Save Custom Game/Save Menu Manager (TMP)")]
 public class SaveMenuManagerTMP : MonoBehaviour
 {
     [Header("Save Settings")]
-    [SerializeField] private SaveCustomInScene saveCustomInScene; // Variables related to save settings.
+    [SerializeField] private SaveCustomInScene saveCustomInScene; // Reference to the SaveCustomInScene component that handles saving data.
     [Space(10)]
     [Header("Confirmation Panel Settings")]
-    [SerializeField] private GameObject confirmationPanel; // Panel for confirmation.
-    [SerializeField] private Button confirmButton; // Button to confirm Save.
-    [SerializeField] private Button cancelButton; // Button to cancel Save.
+    [SerializeField] private GameObject confirmationPanel; // Panel that prompts for confirmation when overwriting a save.
+    [SerializeField] private Button confirmButton; // Button to confirm the save.
+    [SerializeField] private Button cancelButton; // Button to cancel the save operation.
     [Space(10)]
     [Header("Title Systems")]
-    [SerializeField] private TMP_Text titleLoad; // Title text for Save menu.
+    [SerializeField] private TMP_Text titleLoad; // Text component that displays the title based on the current save slot.
     public string text = "Save"; // Default text for save slots.
-    public string textAutomatic = "Autosave"; // Text for automatic save slot.
+    public string textAutomatic = "Autosave"; // Text used for automatic save slots.
     [Space(10)]
     [Header("Button systems")]
-    [SerializeField] private Button buttonSave1; // Button for Save slot 1.
-    [SerializeField] private RawImage rawImageSave1; // Image for Save slot 1.
-    [SerializeField] private TMP_Text textSave1; // Text for Save slot 1.
+    // References to buttons, raw images, and text for each save slot.
+    [SerializeField] private Button buttonSave1;
+    [SerializeField] private RawImage rawImageSave1;
+    [SerializeField] private TMP_Text textSave1;
     [Space(5)]
     [SerializeField] private Button buttonSave2;
     [SerializeField] private RawImage rawImageSave2;
@@ -60,171 +64,203 @@ public class SaveMenuManagerTMP : MonoBehaviour
     [SerializeField] private TMP_Text textSave6;
     [Space(10)]
     [Header("Page systems")]
-    [SerializeField][Tooltip("-->")] private Button right; // Button to navigate to the next page.
-    [SerializeField][Tooltip("<--")] private Button left; // Button to navigate to the previous page.
-    [SerializeField] private TMP_InputField inputField; // Input field for selecting a save slot number.
+    // Navigation buttons and input field for selecting and navigating save slots.
+    [SerializeField][Tooltip("-->")] private Button right; // Button to go to the next page.
+    [SerializeField][Tooltip("<--")] private Button left; // Button to go to the previous page.
+    [SerializeField] private TMP_InputField inputField; // Input field for selecting the save slot number.
 
-    private int currentSaveNumber = 1; // The currently selected save slot number.
-    private bool firstTime; // Flag to track the first time setup.
+    private int currentSaveNumber = 0; // Current selected save slot number.
+    private bool firstTime; // Flag to track if this is the first time setting up the buttons and input field.
+    private readonly string saveKey = "SaveMenuManager"; // Key used for saving the current save slot number in PlayerPrefs.
 
+    // Initializes the SaveCustomInScene component, retrieves the current save slot from PlayerPrefs, and sets up the UI elements (buttons, input field, and title).
     private void OnEnable()
     {
-        saveCustomInScene = SaveDataUtility.GetComponentSaveCustomInScene(); // Get the SaveCustomInScene component if not assigned.
-        if (PlayerPrefs.HasKey("SaveMenuManager")) { currentSaveNumber = PlayerPrefs.GetInt("SaveMenuManager"); } // Retrieve the last selected save slot number from PlayerPrefs.
+        saveCustomInScene = GetComponentSaveCustomInScene(); // Get the SaveCustomInScene component if not assigned.
 
-        // Setup buttons, input field, initial save name, and title display.
+        // Retrieve the last selected save slot number from PlayerPrefs.
+        if (PlayerPrefs.HasKey(saveKey))
+        {
+            currentSaveNumber = PlayerPrefs.GetInt(saveKey); // Retrieve the current save slot number.
+        }
+
+        // Setup the UI elements for buttons, input field, save name, and title display.
         SetupButtonsAndInputField();
         SetupInitialSaveName();
         SetTitle();
     }
 
+    /// <summary>
+    /// Sets the title text in the UI based on the current save number.
+    /// Displays "Autosave" if the save number is 0, otherwise displays the regular save name.
+    /// </summary>
     public void SetTitle()
     {
-        // Display different titles based on the current save number.
+        // Set the title based on whether it's an autosave or a regular save slot.
         if (currentSaveNumber == 0)
-        { titleLoad.text = textAutomatic; } // Show the automatic save title.
-        else { titleLoad.text = text; } // Show the regular save title.
-    }
-
-    private void SetupButtonsAndInputField()
-    {
-        // Ensure setup occurs only once and the required UI elements are available.
-        if (!firstTime && right != null && left != null && inputField != null)
         {
-            // Add listeners to the navigation buttons and input field events.
-            right.onClick.AddListener(IncreaseNumber); // Increase save slot number.
-            left.onClick.AddListener(DecreaseNumber); // Decrease save slot number.
-            inputField.onValidateInput += ValidateInput; // Validate input characters.
-            inputField.onEndEdit.AddListener(OnEndEditInputField); // Handle input field's end edit event.
-
-            // Add listeners to save buttons.
-            buttonSave1.onClick.AddListener(() => SaveGame(1)); // Save data to slot 1
-            buttonSave2.onClick.AddListener(() => SaveGame(2)); // Save data to slot 2
-            buttonSave3.onClick.AddListener(() => SaveGame(3)); // Save data to slot 3
-            buttonSave4.onClick.AddListener(() => SaveGame(4)); // Save data to slot 4
-            buttonSave5.onClick.AddListener(() => SaveGame(5)); // Save data to slot 5
-            buttonSave6.onClick.AddListener(() => SaveGame(6)); // Save data to slot 6
-
-            cancelButton.onClick.AddListener(CancelSave); // Handle cancel save button.
-
-            firstTime = true; // Mark setup as completed.
+            titleLoad.text = textAutomatic; // Show "Autosave" title.
+        }
+        else
+        {
+            titleLoad.text = text; // Show the regular save title.
         }
     }
 
+    // Sets up the navigation buttons, input field, and listeners for save buttons.
+    // Ensures that setup only occurs once, and updates the UI with relevant listeners and interactions.
+    private void SetupButtonsAndInputField()
+    {
+        // Ensure setup happens only once.
+        if (!firstTime && right != null && left != null && inputField != null)
+        {
+            // Add listeners for navigation buttons and input field events.
+            right.onClick.AddListener(IncreaseNumber); // Navigate to the next save slot.
+            left.onClick.AddListener(DecreaseNumber); // Navigate to the previous save slot.
+            inputField.onValidateInput += ValidateInput; // Validate user input in the input field.
+            inputField.onEndEdit.AddListener(OnEndEditInputField); // Handle input field editing completion.
+
+            // Add listeners for each save button.
+            buttonSave1.onClick.AddListener(() => SaveGame(1)); // Save data to slot 1.
+            buttonSave2.onClick.AddListener(() => SaveGame(2)); // Save data to slot 2.
+            buttonSave3.onClick.AddListener(() => SaveGame(3)); // Save data to slot 3.
+            buttonSave4.onClick.AddListener(() => SaveGame(4)); // Save data to slot 4.
+            buttonSave5.onClick.AddListener(() => SaveGame(5)); // Save data to slot 5.
+            buttonSave6.onClick.AddListener(() => SaveGame(6)); // Save data to slot 6.
+
+            cancelButton.onClick.AddListener(CancelSave); // Handle cancellation of the save operation.
+
+            firstTime = true; // Mark the setup as complete.
+        }
+    }
+
+    // Initializes the input field with the current save number and updates the displayed save slot names accordingly.
     private void SetupInitialSaveName()
     {
         if (inputField != null)
         {
-            inputField.text = currentSaveNumber.ToString(); // Set the input field's text to the current save number.
-            UpdateSaveNames(); // Update the displayed save names based on the current save number.
+            inputField.text = currentSaveNumber.ToString(); // Set the input field text to reflect the current save number.
+            UpdateSaveNames(); // Refresh save slot labels and related data based on the current save number.
         }
     }
 
+    // Updates save slot labels, stores the current save number, and refreshes UI data.
     private void UpdateSaveNames()
     {
-        string savePrefix = $"{inputField.text} - "; // Prefix for save names based on the input field text (save number).
+        string savePrefix = $"{inputField.text} -"; // Generate prefix using the current save number from the input field.
 
-        // Update the displayed save names for each button based on the save number.
-        textSave1.text = savePrefix + "1";
-        textSave2.text = savePrefix + "2";
-        textSave3.text = savePrefix + "3";
-        textSave4.text = savePrefix + "4";
-        textSave5.text = savePrefix + "5";
-        textSave6.text = savePrefix + "6";
+        // Update the label for each save slot with the current save prefix and slot index.
+        textSave1.text = $"{savePrefix} 1";
+        textSave2.text = $"{savePrefix} 2";
+        textSave3.text = $"{savePrefix} 3";
+        textSave4.text = $"{savePrefix} 4";
+        textSave5.text = $"{savePrefix} 5";
+        textSave6.text = $"{savePrefix} 6";
 
-        PlayerPrefs.SetInt("SaveMenuManager", currentSaveNumber); // Store the current save number in PlayerPrefs.
-        left.interactable = currentSaveNumber > 0; // Enable/disable the left button based on the current save number.
+        PlayerPrefs.SetInt(saveKey, currentSaveNumber); // Save the current save number persistently using PlayerPrefs.
+        left.interactable = currentSaveNumber > 0; // Enable the left navigation button only if the number is greater than 0.
 
-        // Clear the images and textures and load data for the save slots.
-        ClearRawImagesAndTextures();
-        LoadData();
-        SetTitle();
+        ClearRawImagesAndTextures(); // Remove previously displayed screenshots.
+        LoadData(); // Load save data and screenshots for each slot based on the updated save number.
+        SetTitle(); // Refresh the title label in the UI based on the current context (e.g., autosave or manual).
     }
 
+    /// <summary>
+    /// Increments the save number and refreshes UI elements to reflect the new state.
+    /// </summary>
     public void IncreaseNumber()
     {
         if (inputField != null)
         {
-            int.TryParse(inputField.text, out currentSaveNumber); // Get the current save number from the input field text.
-            currentSaveNumber++; // Increment the save number.
-            inputField.text = currentSaveNumber.ToString(); // Set the input field text to the updated save number.
-            UpdateSaveNames(); // Update the save names and corresponding data for the new save number.
+            int.TryParse(inputField.text, out currentSaveNumber); // Attempt to parse the current value from the input field.
+            currentSaveNumber++; // Increment the parsed save number.
+            inputField.text = currentSaveNumber.ToString(); // Reflect the new value back in the input field.
+            UpdateSaveNames(); // Refresh save slot labels and related data based on the new number.
         }
     }
 
+    /// <summary>
+    /// Decreases the save slot number and updates the UI elements accordingly.
+    /// </summary>
     public void DecreaseNumber()
     {
         if (inputField != null && currentSaveNumber > 0)
         {
-            int.TryParse(inputField.text, out currentSaveNumber); // Get the current save number from the input field text.
-            currentSaveNumber--; // Decrease the save number if it's greater than 0.
-            inputField.text = currentSaveNumber.ToString(); // Set the input field text to the updated save number.
-            UpdateSaveNames(); // Update the save names and corresponding data for the new save number.
+            int.TryParse(inputField.text, out currentSaveNumber); // Parse the current save number from the input field text.
+            currentSaveNumber--; // Decrement the save number if it is greater than zero.
+            inputField.text = currentSaveNumber.ToString(); // Update the input field text with the new save number.
+            UpdateSaveNames(); // Refresh save slot labels and related data using the new save number.
         }
     }
 
+    // Validates input to ensure only numeric characters are allowed in the input field.
     private char ValidateInput(string text, int charIndex, char addedChar)
     {
-        // Validate input: Allow only digits to be entered in the input field.
-        if (char.IsDigit(addedChar)) 
-        { 
-            return addedChar; // If the entered character is a digit, allow it.
-        }
-
-        return '\0'; // If not a digit, don't allow the character to be added to the input field.
+        return char.IsDigit(addedChar) ? addedChar : '\0'; // Allow only digits in the input field.
     }
 
+    /// <summary>
+    /// Parses the input field value and updates the save slot display when editing ends.
+    /// </summary>
+    /// <param name="value">The text entered by the user in the input field.</param>
     public void OnEndEditInputField(string value)
     {
         if (inputField != null)
         {
-            int.TryParse(value, out currentSaveNumber); // Parse the text from the input field to an integer and update the currentSaveNumber.
-            UpdateSaveNames(); // Update the save names based on the modified currentSaveNumber.
+            int.TryParse(value, out currentSaveNumber); // Convert the entered text to an integer and update currentSaveNumber.
+            UpdateSaveNames(); // Update save slot labels and related data to reflect the new number.
         }
     }
 
+    /// <summary>
+    /// Saves game data to a specific slot. If the slot is already occupied, shows a confirmation panel before overwriting.
+    /// </summary>
+    /// <param name="button">The slot number to save into (1 to 6).</param>
     public void SaveGame(int button)
     {
         // Check if the save slot is occupied.
         if (IsSaveSlotOccupied(button))
         {
-            confirmationPanel.SetActive(true); // If the slot is occupied, display the confirmation panel.
+            confirmationPanel.SetActive(true); // Show confirmation dialog if the selected save slot is already used.
 
-            // Remove all previous listeners and add a listener to confirm the save.
+            // Clear existing listeners and set new confirmation action for overwriting.
             confirmButton.onClick.RemoveAllListeners();
             confirmButton.onClick.AddListener(() => ConfirmSave(button));
         }
-        else // If the slot is not occupied, perform the save directly.
+        else
         {
-            saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Set the file name for saving.
-            saveCustomInScene.SaveData(); // Save the data.
+            saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Construct file name using current save number and selected slot.
+            saveCustomInScene.SaveData(); // Perform the save operation.
 
-            // Clear the raw images and textures and reload the data to display changes.
-            ClearRawImagesAndTextures();
-            LoadData();
+            ClearRawImagesAndTextures(); // Clear current preview images.
+            LoadData(); // Reload save data to reflect the new save.
         }
     }
 
+    /// <summary>
+    /// Checks whether the specified save slot is currently occupied (i.e., has a saved texture).
+    /// </summary>
+    /// <param name="slotNumber">The slot number to check (1 to 6).</param>
+    /// <returns>True if the slot contains saved data; otherwise, false.</returns>
     private bool IsSaveSlotOccupied(int slotNumber)
     {
-        // Check if the given save slot number has data.
         return slotNumber switch
         {
-            // Check each slot number and return true if the associated raw image has a texture (occupied).
             1 => rawImageSave1.texture != null,
             2 => rawImageSave2.texture != null,
             3 => rawImageSave3.texture != null,
             4 => rawImageSave4.texture != null,
             5 => rawImageSave5.texture != null,
             6 => rawImageSave6.texture != null,
-            // If an unknown slot number is provided, return false.
-            _ => false,
+            _ => false, // Return false for unknown slot numbers.
         };
     }
 
+    /// <summary>
+    /// Clears all textures from the save slot preview images to remove existing thumbnails.
+    /// </summary>
     public void ClearRawImagesAndTextures()
     {
-        // Clear all RawImage textures by setting them to null (empty texture).
         rawImageSave1.texture = null;
         rawImageSave2.texture = null;
         rawImageSave3.texture = null;
@@ -233,158 +269,167 @@ public class SaveMenuManagerTMP : MonoBehaviour
         rawImageSave6.texture = null;
     }
 
+    /// <summary>
+    /// Confirms the save operation and writes game data to the specified save slot.
+    /// </summary>
+    /// <param name="button">The slot number confirmed for saving (1 to 6).</param>
     public void ConfirmSave(int button)
     {
-        saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Set the file name for the save based on the input field and the selected button.
-        saveCustomInScene.SaveData(); // Save the current data to the specified slot.
-        ClearRawImagesAndTextures(); // Clear the UI images and textures.
-        LoadData(); // Reload and display updated save data in the UI.
-        confirmationPanel.SetActive(false); // Hide the confirmation panel after the save operation is confirmed.
+        saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Construct the file name using the input field value and selected slot number.
+        saveCustomInScene.SaveData(); // Save the current game data to the specified file.
+
+        ClearRawImagesAndTextures(); // Clear existing preview images and textures.
+        LoadData(); // Reload data to reflect the new save in the UI.
+
+        confirmationPanel.SetActive(false); // Close the confirmation dialog.
     }
 
-    public void CancelSave() { confirmationPanel.SetActive(false); } // Hide the confirmation panel without saving any data.
+    /// <summary>
+    /// Cancels the pending save operation and closes the confirmation panel without saving.
+    /// </summary>
+    public void CancelSave()
+    {
+        confirmationPanel.SetActive(false); // Hide the confirmation UI without making any changes.
+    }
 
+    /// <summary>
+    /// Loads and displays save data for all six save slots, from PlayerPrefs or local files.
+    /// </summary>
     public void LoadData()
     {
-        // Loop through each save slot from 1 to 6.
+        // Loop through each save slot index (1 to 6).
         for (int i = 1; i <= 6; i++)
         {
-            string fileName = $"{inputField.text} - {i}"; // Create the file name based on the slot number.
-            string savePath = DetermineSavePath(fileName); // Determine the save path based on the file name.
+            string fileName = $"{inputField.text} - {i}"; // Compose the file name based on the current input and slot index.
+            string savePath = DetermineSavePath(fileName); // Resolve the full save path for this file name.
 
             if (saveCustomInScene.saveCustomObject.playerPrefs)
             {
-                string jsonData = PlayerPrefs.GetString(fileName); // Load data from PlayerPrefs if playerPrefs are used for saving.
-                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize JSON data to SaveCustomFile object.
+                // If saving through PlayerPrefs is enabled.
+                string jsonData = PlayerPrefs.GetString(fileName); // Try to load JSON string from PlayerPrefs.
+                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize the data to an object.
 
                 if (PlayerPrefs.HasKey(fileName))
                 {
-                    // Load data and render image slot if the data exists in PlayerPrefs.
-                    LoadDataString(data, i);
-                    RenderImageSlot(i, true);
+                    LoadDataString(data, i); // Populate save slot with data.
+                    RenderImageSlot(i, true); // Display occupied save slot preview.
                 }
                 else
                 {
-                    RenderImageSlot(i, false); // Render an empty image slot if no data found in PlayerPrefs.
+                    RenderImageSlot(i, false); // Show empty save slot if no data found.
                 }
             }
             else
             {
+                // If saving via file system is enabled.
                 if (File.Exists(savePath))
                 {
-                    // Load data from file if the file exists.
-                    string jsonData = File.ReadAllText(savePath);
-                    var data = JsonUtility.FromJson<SaveCustomFile>(jsonData);
+                    string jsonData = File.ReadAllText(savePath); // Load JSON from file.
+                    var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize to SaveCustomFile.
 
-                    // Load data and render image slot if the file exists.
-                    LoadDataString(data, i);
-                    RenderImageSlot(i, true);
+                    LoadDataString(data, i); // Populate save slot with data.
+                    RenderImageSlot(i, true); // Display occupied save slot preview.
                 }
                 else
                 {
-                    RenderImageSlot(i, false); // Render an empty image slot if the file doesn't exist.
+                    RenderImageSlot(i, false); // Show empty save slot if file doesn't exist.
                 }
             }
         }
     }
 
+    // Determines the full file path for a given save file name, based on save configuration.
     private string DetermineSavePath(string fileName)
     {
         string savePath;
 
         if (saveCustomInScene.saveCustomObject.playerPrefs)
         {
-            savePath = ""; // If using PlayerPrefs for saving, set savePath as an empty string.
+            savePath = ""; // No file path is needed if using PlayerPrefs.
         }
         else if (saveCustomInScene.saveCustomObject.localLow)
         {
-            savePath = Path.Combine(Application.persistentDataPath, "saves", fileName + ".json"); // If localLow is set, savePath points to the persistent data path.
+            // If using persistent data path (LocalLow), combine it with folder and filename.
+            savePath = Path.Combine(Application.persistentDataPath, "saves", $"{fileName}.json");
         }
         else
         {
-            // For other cases (not using PlayerPrefs or localLow), determine the save path based on the platform (Unity Editor or other platforms).
+            // For other setups (e.g., Editor or build output folder), choose based on platform.
         #if UNITY_EDITOR
-            savePath = Path.Combine(Application.dataPath, "Editor/saves", fileName + ".json");
+            savePath = Path.Combine(Application.dataPath, "Editor/saves", $"{fileName}.json");
         #else
-            savePath = Path.Combine(Application.dataPath, "saves", fileName + ".json");
+            savePath = Path.Combine(Application.dataPath, "saves", $"{fileName}.json");
         #endif
         }
 
-        // Output the determined save path to the console for debugging purposes.
         Debug.Log(savePath);
         return savePath;
     }
 
+    /// <summary>
+    /// Sets the visibility of the raw image for a specific save slot.
+    /// </summary>
+    /// <param name="slotNumber">The save slot number (1–6).</param>
+    /// <param name="available">True to show the slot image; false to hide it.</param>
     private void RenderImageSlot(int slotNumber, bool available)
     {
+        // Set color to white if available, or fully transparent if not.
+        Color slotColor = available ? Color.white : new Color(1f, 1f, 1f, 0f);
+
+        // Apply the color to the corresponding raw image based on slot number.
         switch (slotNumber)
         {
-            case 1:
-                // Set the transparency of the RawImage for slot 1 based on availability.
-                rawImageSave1.color = available ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f);
-                break;
-            case 2:
-                // Set the transparency of the RawImage for slot 2 based on availability.
-                rawImageSave2.color = available ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f);
-                break;
-            case 3:
-                // Set the transparency of the RawImage for slot 3 based on availability.
-                rawImageSave3.color = available ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f);
-                break;
-            case 4:
-                // Set the transparency of the RawImage for slot 4 based on availability.
-                rawImageSave4.color = available ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f);
-                break;
-            case 5:
-                // Set the transparency of the RawImage for slot 5 based on availability.
-                rawImageSave5.color = available ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f);
-                break;
-            case 6:
-                // Set the transparency of the RawImage for slot 6 based on availability.
-                rawImageSave6.color = available ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f);
-                break;
+            case 1: rawImageSave1.color = slotColor; break;
+            case 2: rawImageSave2.color = slotColor; break;
+            case 3: rawImageSave3.color = slotColor; break;
+            case 4: rawImageSave4.color = slotColor; break;
+            case 5: rawImageSave5.color = slotColor; break;
+            case 6: rawImageSave6.color = slotColor; break;
             default:
-                Debug.LogWarning("Slot number out of range!"); // Log a warning if the slot number is out of range.
+                Debug.LogWarning("Slot number out of range!");
                 break;
         }
     }
 
+    /// <summary>
+    /// Loads the save data into the corresponding UI elements for the specified slot.
+    /// </summary>
+    /// <param name="data">The deserialized save data.</param>
+    /// <param name="slotNumber">The slot number to populate (1–6).</param>
     private void LoadDataString(SaveCustomFile data, int slotNumber)
     {
+        string displayText = $"{inputField.text} - {slotNumber} ({data.gameTime})"; // Compose the text showing slot ID and game time.
+        Texture screenshot = RenderScreenshot(data.screenshot); // Convert the saved screenshot data into a Texture.
+
+        // Assign the text and image to the appropriate UI elements based on slot number.
         switch (slotNumber)
         {
             case 1:
-                // Update the text for slot 1 with the game time and set the associated texture.
-                textSave1.text = $"{inputField.text} - 1 ({data.gameTime})";
-                rawImageSave1.texture = SaveDataUtility.RenderScreenshot(data.screenshot);
+                textSave1.text = displayText;
+                rawImageSave1.texture = screenshot;
                 break;
             case 2:
-                // Update the text for slot 2 with the game time and set the associated texture.
-                textSave2.text = $"{inputField.text} - 2 ({data.gameTime})";
-                rawImageSave2.texture = SaveDataUtility.RenderScreenshot(data.screenshot);
+                textSave2.text = displayText;
+                rawImageSave2.texture = screenshot;
                 break;
             case 3:
-                // Update the text for slot 3 with the game time and set the associated texture.
-                textSave3.text = $"{inputField.text} - 3 ({data.gameTime})";
-                rawImageSave3.texture = SaveDataUtility.RenderScreenshot(data.screenshot);
+                textSave3.text = displayText;
+                rawImageSave3.texture = screenshot;
                 break;
             case 4:
-                // Update the text for slot 4 with the game time and set the associated texture.
-                textSave4.text = $"{inputField.text} - 4 ({data.gameTime})";
-                rawImageSave4.texture = SaveDataUtility.RenderScreenshot(data.screenshot);
+                textSave4.text = displayText;
+                rawImageSave4.texture = screenshot;
                 break;
             case 5:
-                // Update the text for slot 5 with the game time and set the associated texture.
-                textSave5.text = $"{inputField.text} - 5 ({data.gameTime})";
-                rawImageSave5.texture = SaveDataUtility.RenderScreenshot(data.screenshot);
+                textSave5.text = displayText;
+                rawImageSave5.texture = screenshot;
                 break;
             case 6:
-                // Update the text for slot 6 with the game time and set the associated texture.
-                textSave6.text = $"{inputField.text} - 6 ({data.gameTime})";
-                rawImageSave6.texture = SaveDataUtility.RenderScreenshot(data.screenshot);
+                textSave6.text = displayText;
+                rawImageSave6.texture = screenshot;
                 break;
             default:
-                Debug.LogWarning("Slot number out of range!"); // Log a warning if the slot number is out of range.
+                Debug.LogWarning("Slot number out of range!");
                 break;
         }
     }

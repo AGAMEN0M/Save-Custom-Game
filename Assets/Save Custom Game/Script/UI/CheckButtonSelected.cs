@@ -1,10 +1,10 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: This script ensures that a default button is selected when no other UI 
- *              elements are currently selected or when the currently selected element is 
- *              inactive. It checks in each frame whether the EventSystem has a selected 
- *              object and if it is active in the hierarchy, defaulting to a specified button 
- *              if these conditions are not met. This helps maintain consistent UI navigation.
+ * Description: Ensures UI responsiveness by continuously checking if any button 
+ *              is currently selected in the Unity EventSystem. If no active 
+ *              selection is found (or if the selected object is inactive), 
+ *              this script will re-select a predefined default button. 
+ *              Useful for maintaining keyboard or controller navigation.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------

@@ -1,11 +1,10 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: This utility class provides a method to retrieve detailed information 
- *              about the calling method, including the file path and line number within 
- *              the project. The information is captured using a stack trace, and 
- *              the file path is adjusted to be relative to the project's Assets folder. 
- *              It is particularly useful for debugging and logging, offering insights 
- *              into where an error or method call originated.
+ * Description: Utility class for retrieving method call information for debugging. 
+ *              It uses a stack trace to extract the file path and line number from 
+ *              where a method was called, excluding internal utility frames. 
+ *              This is especially useful for logging the exact source of errors 
+ *              or events in the SaveCustomGame system.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -18,6 +17,11 @@ namespace SaveCustomGame
 {
     public static class ExceptionUtility
     {
+        /// <summary>
+        /// Retrieves the file path and line number of the external method that called this utility.
+        /// Skips internal frames from SaveDataUtility and ExceptionUtility to return the most relevant
+        /// call location. Useful for pinpointing the origin of events or errors in debug logs.
+        /// </summary>
         public static string GetCallingMethodInfo()
         {
             var stackTrace = new StackTrace(true); // Create a stack trace to capture method call information.

@@ -1,11 +1,11 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: The LoadMenuManager script manages the user interface for loading saved game data in Unity.
- *              It handles various UI elements, including buttons and text fields, to allow users to load saved
- *              game states from different slots. The script also supports functionalities like updating the 
- *              load slot names, confirming the load process, and managing multiple load pages. The saved data can
- *              be fetched from either PlayerPrefs or external files, with appropriate checks and UI updates based
- *              on whether data is present in the specified slots.
+ * Description: Manages the in-game load menu UI for selecting and loading saved 
+ *              game states. Handles dynamic slot labeling, page navigation, and 
+ *              confirmation dialogs. Supports both PlayerPrefs and external file 
+ *              saving modes, automatically detecting available data and rendering 
+ *              associated thumbnails and metadata per slot. Enables flexible 
+ *              loading of autosaves and manual saves across multiple pages.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -16,27 +16,30 @@ using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
 
+using static SaveCustomGame.SaveDataUtility;
+
 [AddComponentMenu("UI/Save Custom Game/Load Menu Manager (Legacy)")]
 public class LoadMenuManager : MonoBehaviour
 {
     [Header("Load Settings")]
-    [SerializeField] private SaveCustomInScene saveCustomInScene; // Reference to SaveCustomInScene for loading.
+    [SerializeField] private SaveCustomInScene saveCustomInScene; // Reference to the SaveCustomInScene component that handles loading data.
     [Space(10)]
     [Header("Confirmation Panel Settings")]
-    [SerializeField] private GameObject confirmationPanel; // Panel for confirmation.
-    [SerializeField] private Button confirmButton; // Button to confirm load.
-    [SerializeField] private Button cancelButton; // Button to cancel load.
+    [SerializeField] private GameObject confirmationPanel; // Panel that prompts for confirmation before loading a save.
+    [SerializeField] private Button confirmButton; // Button to confirm the load.
+    [SerializeField] private Button cancelButton; // Button to cancel the load operation.
     [Space(10)]
     [Header("Title Systems")]
-    [SerializeField] private Text titleLoad; // Title text for load menu.
-    public string text = "Load"; // Default load text.
-    public string textAutomatic = "Autosave"; // Text for autosave.
+    [SerializeField] private Text titleLoad; // Text component that displays the title based on the current load slot.
+    public string text = "Load"; // Default text for load slots.
+    public string textAutomatic = "Autosave"; // Text used for automatic save slots.
     [Space(10)]
+    // References to buttons, raw images, and text for each load slot.
     [Header("Button systems")]
-    [SerializeField] private string loadPath1; // Path for load slot 1.
-    [SerializeField] private Button buttonLoad1; // Button for load slot 1.
-    [SerializeField] private RawImage rawImageLoad1; // Image for load slot 1.
-    [SerializeField] private Text textLoad1; // Text for load slot 1.
+    [SerializeField] private string loadPath1;
+    [SerializeField] private Button buttonLoad1;
+    [SerializeField] private RawImage rawImageLoad1;
+    [SerializeField] private Text textLoad1;
     [Space(5)]
     [SerializeField] private string loadPath2;
     [SerializeField] private Button buttonLoad2;
@@ -64,164 +67,195 @@ public class LoadMenuManager : MonoBehaviour
     [SerializeField] private Text textLoad6;
     [Space(10)]
     [Header("Page systems")]
-    [SerializeField][Tooltip("-->")] private Button right; // Button for moving to the next page.
-    [SerializeField][Tooltip("<--")] private Button left; // Button for moving to the previous page.
-    [SerializeField] private InputField inputField; // Input field for specifying load slot.
+    // Navigation buttons and input field for selecting and navigating load slots.
+    [SerializeField][Tooltip("-->")] private Button right; // Button to go to the next page.
+    [SerializeField][Tooltip("<--")] private Button left; // Button to go to the previous page.
+    [SerializeField] private InputField inputField; // Input field for selecting the load slot number.
 
-    private int currentLoadNumber = 1; // Current load slot number.
-    private bool firstTime; // Flag to determine if it's the first time setting up buttons.
+    private int currentLoadNumber = 0; // Current selected load slot number.
+    private bool firstTime; // Flag to track if this is the first time setting up the buttons and input field.
+    private readonly string loadKey = "SaveMenuManager"; // Key used for saving the current load slot number in PlayerPrefs.
 
+    // Initializes the SaveCustomInScene component, retrieves the current load slot from PlayerPrefs, and sets up the UI elements (buttons, input field, and title).
     private void OnEnable()
     {
-        saveCustomInScene = SaveDataUtility.GetComponentSaveCustomInScene(); // Fetching the SaveCustomInScene component reference when the object is enabled.
-        if (PlayerPrefs.HasKey("SaveMenuManager")) { currentLoadNumber = PlayerPrefs.GetInt("SaveMenuManager"); } // Check if there's a saved value for the current load number and retrieve it from PlayerPrefs.
+        saveCustomInScene = GetComponentSaveCustomInScene(); // Get the SaveCustomInScene component if not assigned.
 
-        // Set up buttons, input fields, load names, and title on enable.
+        // Retrieve the last selected load slot number from PlayerPrefs.
+        if (PlayerPrefs.HasKey(loadKey))
+        {
+            currentLoadNumber = PlayerPrefs.GetInt(loadKey); // Retrieve the current load slot number.
+        }
+
+        // Setup the UI elements for buttons, input field, load name, and title display.
         SetupButtonsAndInputField();
         SetupInitialLoadName();
         SetTitle();
     }
 
+    /// <summary>
+    /// Sets the title text in the UI based on the current load number.
+    /// Displays "Autosave" if the load number is 0, otherwise displays the regular load name.
+    /// </summary>
     public void SetTitle()
     {
-        // Check if the current load number is for automatic load or regular load and set the title accordingly.
+        // Set the title based on whether it's an autosave or a regular load slot.
         if (currentLoadNumber == 0)
-        { titleLoad.text = textAutomatic; } // Set the title to the automatic load text.
-        else { titleLoad.text = text; } // Set the title to the regular load text.
-    }
-
-    private void SetupButtonsAndInputField()
-    {
-        // Check if it's the first time setting up buttons and input fields and they are not null.
-        if (!firstTime && right != null && left != null && inputField != null)
         {
-            // Add listeners for buttons and input field events.
-            right.onClick.AddListener(IncreaseNumber); // Increase the load number when the right arrow button is clicked.
-            left.onClick.AddListener(DecreaseNumber); // Decrease the load number when the left arrow button is clicked.
-            inputField.onValidateInput += ValidateInput; // Validate input for the load number field.
-            inputField.onEndEdit.AddListener(OnEndEditInputField); // Triggered when the input field editing ends.
-
-            // Add listeners for each load slot button to load the corresponding saved data.
-            buttonLoad1.onClick.AddListener(() => LoadGame(1));
-            buttonLoad2.onClick.AddListener(() => LoadGame(2));
-            buttonLoad3.onClick.AddListener(() => LoadGame(3));
-            buttonLoad4.onClick.AddListener(() => LoadGame(4));
-            buttonLoad5.onClick.AddListener(() => LoadGame(5));
-            buttonLoad6.onClick.AddListener(() => LoadGame(6));
-
-            cancelButton.onClick.AddListener(CancelLoad); // Triggered when the cancel button is clicked.
-
-            firstTime = true; // Set the firstTime flag to true after setting up listeners.
+            titleLoad.text = textAutomatic; // Show "Autosave" title.
+        }
+        else
+        {
+            titleLoad.text = text; // Show the regular load title.
         }
     }
 
+    // Sets up the navigation buttons, input field, and listeners for load buttons.
+    // Ensures that setup only occurs once, and updates the UI with relevant listeners and interactions.
+    private void SetupButtonsAndInputField()
+    {
+        // Ensure setup happens only once.
+        if (!firstTime && right != null && left != null && inputField != null)
+        {
+            // Add listeners for navigation buttons and input field events.
+            right.onClick.AddListener(IncreaseNumber); // Navigate to the next load slot.
+            left.onClick.AddListener(DecreaseNumber); // Navigate to the previous load slot.
+            inputField.onValidateInput += ValidateInput; // Validate user input in the input field.
+            inputField.onEndEdit.AddListener(OnEndEditInputField); // Handle input field editing completion.
+
+            // Add listeners for each load button.
+            buttonLoad1.onClick.AddListener(() => LoadGame(1)); // load data to slot 1.
+            buttonLoad2.onClick.AddListener(() => LoadGame(2)); // load data to slot 2.
+            buttonLoad3.onClick.AddListener(() => LoadGame(3)); // load data to slot 3.
+            buttonLoad4.onClick.AddListener(() => LoadGame(4)); // load data to slot 4.
+            buttonLoad5.onClick.AddListener(() => LoadGame(5)); // load data to slot 5.
+            buttonLoad6.onClick.AddListener(() => LoadGame(6)); // load data to slot 6.
+
+            cancelButton.onClick.AddListener(CancelLoad); // Handle cancellation of the load operation.
+
+            firstTime = true; // Mark the setup as complete.
+        }
+    }
+
+    // Initializes the input field with the current load number and updates the displayed load slot names accordingly.
     private void SetupInitialLoadName()
     {
         if (inputField != null)
         {
-            inputField.text = currentLoadNumber.ToString(); // Check if the input field exists and set its text to the currentLoadNumber.
-            UpdateLoadNames(); // Update the names displayed on the load slots based on the initial load number.
+            inputField.text = currentLoadNumber.ToString(); // Set the input field text to reflect the current load number.
+            UpdateLoadNames(); // Refresh load slot labels and related data based on the current load number.
         }
     }
 
+    // Updates load slot labels, stores the current load number, and refreshes UI data.
     private void UpdateLoadNames()
     {
-        string savePrefix = $"{inputField.text} - "; // Define the prefix for the displayed save names based on the input field text.
+        string savePrefix = $"{inputField.text} -"; // Generate prefix using the current load number from the input field.
 
-        // Update the displayed names for each load slot based on the save prefix and slot number.
-        textLoad1.text = savePrefix + "1";
-        textLoad2.text = savePrefix + "2";
-        textLoad3.text = savePrefix + "3";
-        textLoad4.text = savePrefix + "4";
-        textLoad5.text = savePrefix + "5";
-        textLoad6.text = savePrefix + "6";
+        // Update the label for each load slot with the current load prefix and slot index.
+        textLoad1.text = $"{savePrefix} 1";
+        textLoad2.text = $"{savePrefix} 2";
+        textLoad3.text = $"{savePrefix} 3";
+        textLoad4.text = $"{savePrefix} 4";
+        textLoad5.text = $"{savePrefix} 5";
+        textLoad6.text = $"{savePrefix} 6";
 
-        PlayerPrefs.SetInt("SaveMenuManager", currentLoadNumber); // Store the currentLoadNumber in PlayerPrefs for future reference.
-        left.interactable = currentLoadNumber > 0; // Enable or disable the left button based on whether the currentLoadNumber is greater than 0.
+        PlayerPrefs.SetInt(loadKey, currentLoadNumber); // Save the current load number persistently using PlayerPrefs.
+        left.interactable = currentLoadNumber > 0; // Enable the left navigation button only if the number is greater than 0.
 
-        // Clear the images and textures on load slots, load data, and set the title.
-        ClearRawImagesAndTextures();
-        LoadData();
-        SetTitle();
+        ClearRawImagesAndTextures(); // Remove previously displayed screenshots.
+        LoadData(); // Load save data and screenshots for each slot based on the updated load number.
+        SetTitle(); // Refresh the title label in the UI based on the current context (e.g., autosave or manual).
     }
 
+    /// <summary>
+    /// Increments the load number and refreshes UI elements to reflect the new state.
+    /// </summary>
     public void IncreaseNumber()
     {
-        // Check if the inputField is not null.
         if (inputField != null)
         {
-            int.TryParse(inputField.text, out currentLoadNumber); // Parse the text in the input field to get the currentLoadNumber.
-            currentLoadNumber++; // Increment the currentLoadNumber.
-            inputField.text = currentLoadNumber.ToString(); // Update the inputField text with the new currentLoadNumber.
-            UpdateLoadNames(); // Update the load names based on the new currentLoadNumber.
+            int.TryParse(inputField.text, out currentLoadNumber); // Attempt to parse the current value from the input field.
+            currentLoadNumber++; // Increment the parsed load number.
+            inputField.text = currentLoadNumber.ToString(); // Reflect the new value back in the input field.
+            UpdateLoadNames(); // Refresh load slot labels and related data based on the new number.
         }
     }
 
+    /// <summary>
+    /// Decreases the load slot number and updates the UI elements accordingly.
+    /// </summary>
     public void DecreaseNumber()
     {
-        // Check if the inputField is not null and currentLoadNumber is greater than 0.
         if (inputField != null && currentLoadNumber > 0)
         {
-            int.TryParse(inputField.text, out currentLoadNumber); // Parse the text in the input field to get the currentLoadNumber.
-            currentLoadNumber--; // Decrement the currentLoadNumber.
-            inputField.text = currentLoadNumber.ToString(); // Update the inputField text with the new currentLoadNumber.
-            UpdateLoadNames(); // Update the load names based on the new currentLoadNumber.
+            int.TryParse(inputField.text, out currentLoadNumber); // Parse the current load number from the input field text.
+            currentLoadNumber--; // Decrement the load number if it is greater than zero.
+            inputField.text = currentLoadNumber.ToString(); // Update the input field text with the new load number.
+            UpdateLoadNames(); // Refresh load slot labels and related data using the new load number.
         }
     }
 
+    // Validates input to ensure only numeric characters are allowed in the input field.
     private char ValidateInput(string text, int charIndex, char addedChar)
     {
-        // Check if the added character is a digit.
-        if (char.IsDigit(addedChar))
-        {
-            return addedChar; // If it's a digit, return the added character.
-        }
-
-        return '\0'; // If not a digit, return null character.
+        return char.IsDigit(addedChar) ? addedChar : '\0'; // Allow only digits in the input field.
     }
 
+    /// <summary>
+    /// Parses the input field value and updates the load slot display when editing ends.
+    /// </summary>
+    /// <param name="value">The text entered by the user in the input field.</param>
     public void OnEndEditInputField(string value)
     {
-        // Check if the input field exists.
         if (inputField != null)
         {
-            int.TryParse(value, out currentLoadNumber); // Try parsing the input value to an integer and update the current load number.
-            UpdateLoadNames(); // Update the load names based on the new input value.
+            int.TryParse(value, out currentLoadNumber); // Convert the entered text to an integer and update currentLoadNumber.
+            UpdateLoadNames(); // Update load slot labels and related data to reflect the new number.
         }
     }
 
+    /// <summary>
+    /// Triggers loading of game data from a specific slot. If data is present, shows a confirmation panel before loading.
+    /// </summary>
+    /// <param name="button">The slot number to load into (1 to 6).</param>
     public void LoadGame(int button)
     {
-        // Check if the slot for loading is occupied.
+        // Check if the load slot is occupied.
         if (IsLoadSlotOccupied(button))
         {
-            confirmationPanel.SetActive(true); // If the slot is occupied, activate the confirmation panel.
+            confirmationPanel.SetActive(true); // Show confirmation dialog if the selected load slot is already used.
 
-            // Clear all previous click listeners and add a new listener to confirm the load for the specific slot.
+            // Clear existing listeners and set new confirmation action for overwriting.
             confirmButton.onClick.RemoveAllListeners();
             confirmButton.onClick.AddListener(() => ConfirmLoad(button));
         }
     }
 
+    /// <summary>
+    /// Checks whether the specified load slot is currently occupied (i.e., has a load texture).
+    /// </summary>
+    /// <param name="slotNumber">The slot number to check (1 to 6).</param>
+    /// <returns>True if the slot contains Load data; otherwise, false.</returns>
     private bool IsLoadSlotOccupied(int slotNumber)
     {
-        // Check if the specified slot number for loading has data associated with it.
         return slotNumber switch
         {
-            // Check each slot number and return true if the associated raw image texture is not null (indicating data presence).
             1 => rawImageLoad1.texture != null,
             2 => rawImageLoad2.texture != null,
             3 => rawImageLoad3.texture != null,
             4 => rawImageLoad4.texture != null,
             5 => rawImageLoad5.texture != null,
             6 => rawImageLoad6.texture != null,
-            _ => false, // Return false if the slot number is out of expected range.
+            _ => false, // Return false for unknown slot numbers.
         };
     }
 
+    /// <summary>
+    /// Clears all textures from the load slot preview images to remove existing thumbnails.
+    /// </summary>
     public void ClearRawImagesAndTextures()
     {
-        // Clear the textures of all raw image slots to reset them.
         rawImageLoad1.texture = null;
         rawImageLoad2.texture = null;
         rawImageLoad3.texture = null;
@@ -230,41 +264,45 @@ public class LoadMenuManager : MonoBehaviour
         rawImageLoad6.texture = null;
     }
 
+    /// <summary>
+    /// Confirms the load operation and retrieves game data from the specified save slot.
+    /// </summary>
+    /// <param name="button">The slot number confirmed for saving (1 to 6).</param>
     public void ConfirmLoad(int button)
     {
-        saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Set the file name for loading based on the selected slot.
+        saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Construct the file name using the input field value and selected slot number.
 
-        // Switch based on the button number to determine the load path for the selected slot.
+        // Set the appropriate load path based on the selected slot.
         switch (button)
         {
-            case 1:
-                saveCustomInScene.savePath = loadPath1;
-                break;
-            case 2:
-                saveCustomInScene.savePath = loadPath2;
-                break;
-            case 3:
-                saveCustomInScene.savePath = loadPath3;
-                break;
-            case 4:
-                saveCustomInScene.savePath = loadPath4;
-                break;
-            case 5:
-                saveCustomInScene.savePath = loadPath5;
-                break;
-            case 6:
-                saveCustomInScene.savePath = loadPath6;
-                break;
+            case 1: saveCustomInScene.savePath = loadPath1; break;
+            case 2: saveCustomInScene.savePath = loadPath2; break;
+            case 3: saveCustomInScene.savePath = loadPath3; break;
+            case 4: saveCustomInScene.savePath = loadPath4; break;
+            case 5: saveCustomInScene.savePath = loadPath5; break;
+            case 6: saveCustomInScene.savePath = loadPath6; break;
             default:
                 Debug.LogWarning("Slot number out of range!");
                 break;
         }
 
-        saveCustomInScene.LoadData(); // Trigger the loading of data associated with the selected file.
+        ClearRawImagesAndTextures(); // Clear existing preview images and textures.
+        saveCustomInScene.LoadData(); // Load the selected game.
+
+        confirmationPanel.SetActive(false); // Close the confirmation dialog.
     }
 
-    public void CancelLoad() { confirmationPanel.SetActive(false); } // Hide the confirmation panel when canceling the load action.
+    /// <summary>
+    /// Cancels the pending Load operation and closes the confirmation panel without loading.
+    /// </summary>
+    public void CancelLoad()
+    {
+        confirmationPanel.SetActive(false); // Hide the confirmation UI without making any changes.
+    }
 
+    /// <summary>
+    /// Loads and displays save data for all six load slots, from PlayerPrefs or local files.
+    /// </summary>
     public void LoadData()
     {
         // Clear all load paths before retrieving new data.
@@ -275,146 +313,163 @@ public class LoadMenuManager : MonoBehaviour
         loadPath5 = "";
         loadPath6 = "";
 
-        // Loop through the available save slots to load data.
+        // Loop through each load slot index (1 to 6).
         for (int i = 1; i <= 6; i++)
         {
-            string fileName = $"{inputField.text} - {i}"; // Construct the file name for the current save slot.
-            string savePath = DetermineLoadPath(fileName); // Determine the path to locate the saved file.
+            string fileName = $"{inputField.text} - {i}"; // Compose the file name based on the current input and slot index.
+            string savePath = DetermineLoadPath(fileName); // Resolve the full load path for this file name.
 
             if (saveCustomInScene.saveCustomObject.playerPrefs)
             {
-                // If using PlayerPrefs, retrieve saved data.
-                string jsonData = PlayerPrefs.GetString(fileName);
-                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData);
+                // If saving through PlayerPrefs is enabled.
+                string jsonData = PlayerPrefs.GetString(fileName); // Try to load JSON string from PlayerPrefs.
+                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize the data to an object.
 
                 if (PlayerPrefs.HasKey(fileName))
                 {
-                    // Load data into UI elements for the current slot.
-                    LoadDataString(data, i, "");
-                    InteractableSlot(i, true);
+                    LoadDataString(data, i, ""); // Populate load slot with data.
+                    InteractableSlot(i, true); // Display occupied load slot preview.
                 }
                 else
                 {
-                    InteractableSlot(i, false); // Slot is empty, disable interaction and display appropriately.
+                    InteractableSlot(i, false); // Show empty load slot if no data found.
                 }
             }
             else
             {
+                // If loading via file system is enabled.
                 if (File.Exists(savePath))
                 {
-                    // Read the saved file and deserialize JSON data.
-                    string jsonData = File.ReadAllText(savePath);
-                    var data = JsonUtility.FromJson<SaveCustomFile>(jsonData);
+                    string jsonData = File.ReadAllText(savePath); // Load JSON from file.
+                    var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize to SaveCustomFile.
 
-                    // Load data into UI elements for the current slot.
-                    LoadDataString(data, i, savePath);
-                    InteractableSlot(i, true);
+                    LoadDataString(data, i, savePath); // Populate load slot with data.
+                    InteractableSlot(i, true); // Display occupied load slot preview.
                 }
                 else
                 {
-                    InteractableSlot(i, false); // Slot is empty, disable interaction and display appropriately.
+                    InteractableSlot(i, false); // Show empty load slot if file doesn't exist.
                 }
             }
         }
     }
 
+    // Determines the full file path for a given load file name, based on load configuration.
     private string DetermineLoadPath(string fileName)
     {
         string savePath;
 
-        // Determine the path based on the saveCustomInScene settings.
         if (saveCustomInScene.saveCustomObject.playerPrefs)
         {
-            savePath = ""; // For PlayerPrefs, no specific path is needed.
+            savePath = ""; // No file path is needed if using PlayerPrefs.
         }
         else if (saveCustomInScene.saveCustomObject.localLow)
         {
-            savePath = Path.Combine(Application.persistentDataPath, "saves", fileName + ".json"); // If using local low, construct the path within the persistent data directory.
+            // If using persistent data path (LocalLow), combine it with folder and filename.
+            savePath = Path.Combine(Application.persistentDataPath, "saves", $"{fileName}.json");
         }
         else
         {
+            // For other setups (e.g., Editor or build output folder), choose based on platform.
         #if UNITY_EDITOR
-            savePath = Path.Combine(Application.dataPath, "Editor/saves", fileName + ".json"); // In the editor, set a specific path for easy access to saved files.
+            savePath = Path.Combine(Application.dataPath, "Editor/saves", $"{fileName}.json");
         #else
-            savePath = Path.Combine(Application.dataPath, "saves", fileName + ".json"); // For other platforms, use a standard save path within the application data directory.
+            savePath = Path.Combine(Application.dataPath, "saves", $"{fileName}.json");
         #endif
         }
 
-        // Output the determined save path for debugging purposes.
         Debug.Log(savePath);
         return savePath;
     }
 
+    /// <summary>
+    /// Sets the visibility of the raw image for a specific load slot.
+    /// </summary>
+    /// <param name="slotNumber">The load slot number (1–6).</param>
+    /// <param name="interactable">True to enable the slot and show image; false to disable and hide image.
     private void InteractableSlot(int slotNumber, bool interactable)
     {
+        // Set color to white if available, or fully transparent if not.
+        Color slotColor = interactable ? Color.white : new Color(1f, 1f, 1f, 0f);
+
+        // Apply the color to the corresponding raw image based on slot number.
         switch (slotNumber)
         {
             case 1:
-                buttonLoad1.interactable = interactable; // Enable or disable the interaction of buttonLoad1 based on the 'interactable' parameter.
-                rawImageLoad1.color = interactable ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f); // Set the visibility of rawImageLoad1 based on the 'interactable' parameter.
+                buttonLoad1.interactable = interactable;
+                rawImageLoad1.color = slotColor;
                 break;
             case 2:
-                buttonLoad2.interactable = interactable; // Enable or disable the interaction of buttonLoad2 based on the 'interactable' parameter.
-                rawImageLoad2.color = interactable ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f); // Set the visibility of rawImageLoad2 based on the 'interactable' parameter.
+                buttonLoad2.interactable = interactable;
+                rawImageLoad2.color = slotColor;
                 break;
             case 3:
-                buttonLoad3.interactable = interactable; // Enable or disable the interaction of buttonLoad3 based on the 'interactable' parameter.
-                rawImageLoad3.color = interactable ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f); // Set the visibility of rawImageLoad3 based on the 'interactable' parameter.
+                buttonLoad3.interactable = interactable;
+                rawImageLoad3.color = slotColor;
                 break;
             case 4:
-                buttonLoad4.interactable = interactable; // Enable or disable the interaction of buttonLoad4 based on the 'interactable' parameter.
-                rawImageLoad4.color = interactable ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f); // Set the visibility of rawImageLoad4 based on the 'interactable' parameter.
+                buttonLoad4.interactable = interactable;
+                rawImageLoad4.color = slotColor;
                 break;
             case 5:
-                buttonLoad5.interactable = interactable; // Enable or disable the interaction of buttonLoad5 based on the 'interactable' parameter.
-                rawImageLoad5.color = interactable ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f); // Set the visibility of rawImageLoad5 based on the 'interactable' parameter.
+                buttonLoad5.interactable = interactable;
+                rawImageLoad5.color = slotColor;
                 break;
             case 6:
-                buttonLoad6.interactable = interactable; // Enable or disable the interaction of buttonLoad6 based on the 'interactable' parameter.
-                rawImageLoad6.color = interactable ? new Color(1f, 1f, 1f, 1f) : new Color(1f, 1f, 1f, 0f); // Set the visibility of rawImageLoad6 based on the 'interactable' parameter.
+                buttonLoad6.interactable = interactable;
+                rawImageLoad6.color = slotColor;
                 break;
             default:
-                Debug.LogWarning("Slot number out of range!"); // If the slot number is out of range, log a warning.
+                Debug.LogWarning("Slot number out of range!");
                 break;
         }
     }
 
+    /// <summary>
+    /// Loads the save data into the corresponding UI elements for the specified slot.
+    /// </summary>
+    /// <param name="data">The deserialized save data.</param>
+    /// <param name="slotNumber">The slot number to populate (1–6).</param>
     private void LoadDataString(SaveCustomFile data, int slotNumber, string savePath)
     {
+        string displayText = $"{inputField.text} - {slotNumber} ({data.gameTime})"; // Compose the text showing slot ID and game time.
+        Texture screenshot = RenderScreenshot(data.screenshot); // Convert the saved screenshot data into a Texture.
+
+        // Assign the text and image to the appropriate UI elements based on slot number.
         switch (slotNumber)
         {
             case 1:
-                textLoad1.text = $"{inputField.text} - 1 ({data.gameTime})"; // Update the display text for the first load slot with the game time information.
-                rawImageLoad1.texture = SaveDataUtility.RenderScreenshot(data.screenshot); // Assign the screenshot to the raw image for the first load slot.
-                loadPath1 = savePath; // Set the load path for the first slot.
+                textLoad1.text = displayText;
+                rawImageLoad1.texture = screenshot;
+                loadPath1 = savePath;
                 break;
             case 2:
-                textLoad2.text = $"{inputField.text} - 2 ({data.gameTime})"; // Update the display text for the second load slot with the game time information.
-                rawImageLoad2.texture = SaveDataUtility.RenderScreenshot(data.screenshot); // Assign the screenshot to the raw image for the second load slot.
-                loadPath2 = savePath; // Set the load path for the second slot.
+                textLoad2.text = displayText;
+                rawImageLoad2.texture = screenshot;
+                loadPath2 = savePath;
                 break;
             case 3:
-                textLoad3.text = $"{inputField.text} - 3 ({data.gameTime})"; // Update the display text for the third load slot with the game time information.
-                rawImageLoad3.texture = SaveDataUtility.RenderScreenshot(data.screenshot); // Assign the screenshot to the raw image for the third load slot.
-                loadPath3 = savePath; // Set the load path for the third slot.
+                textLoad3.text = displayText;
+                rawImageLoad3.texture = screenshot;
+                loadPath3 = savePath;
                 break;
             case 4:
-                textLoad4.text = $"{inputField.text} - 4 ({data.gameTime})"; // Update the display text for the fourth load slot with the game time information.
-                rawImageLoad4.texture = SaveDataUtility.RenderScreenshot(data.screenshot); // Assign the screenshot to the raw image for the fourth load slot.
-                loadPath4 = savePath; // Set the load path for the fourth slot.
+                textLoad4.text = displayText;
+                rawImageLoad4.texture = screenshot;
+                loadPath4 = savePath;
                 break;
             case 5:
-                textLoad5.text = $"{inputField.text} - 5 ({data.gameTime})"; // Update the display text for the fifth load slot with the game time information.
-                rawImageLoad5.texture = SaveDataUtility.RenderScreenshot(data.screenshot); // Assign the screenshot to the raw image for the fifth load slot.
-                loadPath5 = savePath; // Set the load path for the fifth slot.
+                textLoad5.text = displayText;
+                rawImageLoad5.texture = screenshot;
+                loadPath5 = savePath;
                 break;
             case 6:
-                textLoad6.text = $"{inputField.text} - 6 ({data.gameTime})"; // Update the display text for the sixth load slot with the game time information.
-                rawImageLoad6.texture = SaveDataUtility.RenderScreenshot(data.screenshot); // Assign the screenshot to the raw image for the sixth load slot.
-                loadPath6 = savePath; // Set the load path for the sixth slot.
+                textLoad6.text = displayText;
+                rawImageLoad6.texture = screenshot;
+                loadPath6 = savePath;
                 break;
             default:
-                Debug.LogWarning("Slot number out of range!"); // If the slot number is out of range, log a warning.
+                Debug.LogWarning("Slot number out of range!");
                 break;
         }
     }

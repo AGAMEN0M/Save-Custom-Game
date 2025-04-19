@@ -3,9 +3,9 @@ A saving and loading system based on .json and PlayerPrefs with Screenshot of th
 
 # Download
 
-[Save Custom Game - Package v0.0.5](https://drive.google.com/file/d/1RGUuZQJaJ040eiE1HcxL30OjnYztcDvk/view?usp=drive_link)
+[Save Custom Game - Package v0.0.6](https://drive.google.com/file/d/1GizDzvr5WMRqB_7wXkDjA4nnucRvd23W/view?usp=drive_link)
  / 
-[Documentation](https://drive.google.com/file/d/1sBd0M2oXFyGS2ZwHsmmpkB2VoCj0e9X7/view?usp=drive_link)
+[Documentation](https://drive.google.com/file/d/1GiIvXbKYgkvWBFiDQC_B527aqThwgCob/view?usp=drive_link)
 
 # Description
 
@@ -18,4 +18,4 @@ If you have suggestions for improvements and bug fixes, please share them with m
 # Old Versions
 [Old Versions - Package](https://drive.google.com/drive/folders/1tfViPYk7Pi_i4fieT8m8zfYend9P9qd7?usp=drive_link)
 
-Current version in Git v0.5
+Current version in Git v0.6

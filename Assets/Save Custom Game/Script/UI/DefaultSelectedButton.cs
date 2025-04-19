@@ -1,10 +1,9 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: This script automatically selects a specified button when the UI element 
- *              it's attached to is enabled. It is useful in UI navigation, ensuring that 
- *              the correct button is highlighted and ready for interaction by default.
- *              The script clears any previously selected UI object before selecting 
- *              the desired button.
+ * Description: Automatically highlights and selects a specific UI button when 
+ *              the associated GameObject becomes active. This helps enforce a 
+ *              consistent navigation experience by resetting the EventSystem’s 
+ *              selection to the defined default button on UI enable.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------

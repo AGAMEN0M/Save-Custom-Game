@@ -1,17 +1,19 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: This script manages auto-save functionality and allows toggling the 
- *              active state of specific GameObjects. It enables auto-save and triggers 
- *              a save event when a specified key is pressed and disables auto-save with 
- *              another key. Additionally, it provides a method to toggle the activation 
- *              state of GameObjects in a predefined array.
+ * Description: Handles runtime auto-save control and toggling of GameObjects 
+ *              for testing and debugging purposes. Enables auto-save and 
+ *              triggers a save event when a specified key is pressed, and disables 
+ *              auto-save using another key. Also includes a method to toggle the 
+ *              active state of an array of GameObjects. Useful for quick testing 
+ *              of save functionality and dynamic object activation during gameplay.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
 */
 
-using SaveCustomGame;
 using UnityEngine;
+
+using static SaveCustomGame.SaveDataUtility;
 
 [AddComponentMenu("UI/Save Custom Game/In Background/Test Save Custom")]
 public class TestSaveCustom : MonoBehaviour
@@ -28,17 +30,22 @@ public class TestSaveCustom : MonoBehaviour
         if (Input.GetKeyDown(activateAndSave))
         {
             // Enable auto-save and trigger save event.
-            SaveDataUtility.EnableAutoSave();
-            SaveDataUtility.SaveEvent();
+            EnableAutoSave();
+            SaveEvent();
         }
 
         // Check if the key for disabling auto-save is pressed.
         if (Input.GetKeyDown(disable))
         {
-            SaveDataUtility.DisableAutoSave(); // Disable auto-save.
+            DisableAutoSave(); // Disable auto-save.
         }
     }
 
+    /// <summary>
+    /// Toggles the active state of each GameObject in the assigned array.
+    /// If a GameObject is active, it becomes inactive, and vice versa.
+    /// Useful for testing dynamic object visibility or activation during gameplay.
+    /// </summary>
     public void SwitchGameObject()
     {
         // Loop through each GameObject in the gameObjects array.

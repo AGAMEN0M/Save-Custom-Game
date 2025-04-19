@@ -1,12 +1,11 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: This utility script provides static methods for managing and 
- *              accessing save data within a Unity project. It includes functions 
- *              to retrieve and set various data types (float, int, string, bool) 
- *              in a `SaveCustomObject`, capture screenshots from a camera, convert 
- *              textures to sprites, and manage auto-saving. It also handles errors 
- *              related to missing data and components, ensuring smooth data 
- *              management and auto-save functionality.
+ * Description: Central utility class for interacting with SaveCustomObject data 
+ *              in a Unity project. Provides static methods to retrieve and modify 
+ *              float, int, string, bool, and vector values; capture and render 
+ *              screenshots; convert textures to sprites; manage auto-save flags; 
+ *              and trigger save events. Ensures smooth data handling and error 
+ *              logging throughout the save system.
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -15,29 +14,69 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using static SaveCustomGame.ExceptionUtility;
+
 namespace SaveCustomGame
 {
     public static class SaveDataUtility
     {
-        // Load and return the SaveCustomObject from Resources.
+        /// <summary>
+        /// Load and return the SaveCustomObject from Resources.
+        /// Logs an error if the object is not found.
+        /// </summary>
         public static SaveCustomObject GetSaveCustomObject()
         {
             var saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
             if (saveCustomObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return null;
             }
             return saveCustomObject;
         }
 
-        // Retrieve a float value from SaveCustomObject based on item and float tags.
+        /// <summary>
+        /// Retrieve a Vector4 value from SaveCustomObject based on item and vector tags.
+        /// Throws KeyNotFoundException if the tag is not found.
+        /// </summary>
+        public static Vector4 GetVector(string itemTag, string vectorTag)
+        {
+            var saveObject = GetSaveCustomObject();
+            if (saveObject == null)
+            {
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                return Vector4.zero;
+            }
+
+            // Find the item with the specified itemTag.
+            foreach (var customItem in saveObject.saveCustomItems)
+            {
+                if (customItem.itemTag == itemTag)
+                {
+                    // Find the vector with the specified vectorTag.
+                    foreach (var customVector in customItem.itemVector)
+                    {
+                        if (customVector.vectorTag == vectorTag)
+                        {
+                            return customVector.vectorValue;
+                        }
+                    }
+                    throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Vector tag '{vectorTag}' not found in item '{itemTag}'\n");
+                }
+            }
+            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
+        }
+
+        /// <summary>
+        /// Retrieve a float value from SaveCustomObject based on item and float tags.
+        /// Throws KeyNotFoundException if the tag is not found.
+        /// </summary>
         public static float GetFloat(string itemTag, string floatTag)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return 0;
             }
 
@@ -54,19 +93,22 @@ namespace SaveCustomGame
                             return customFloat.floatValue;
                         }
                     }
-                    throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Float tag '{floatTag}' not found in item '{itemTag}'\n");
+                    throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Float tag '{floatTag}' not found in item '{itemTag}'\n");
                 }
             }
-            throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
+            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
         }
 
-        // Retrieve an integer value from SaveCustomObject based on item and int tags.
+        /// <summary>
+        /// Retrieve an integer value from SaveCustomObject based on item and int tags.
+        /// Throws KeyNotFoundException if the tag is not found.
+        /// </summary>
         public static int GetInt(string itemTag, string intTag)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return 0;
             }
 
@@ -83,19 +125,22 @@ namespace SaveCustomGame
                             return customInt.intValue;
                         }
                     }
-                    throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Int tag '{intTag}' not found in item '{itemTag}'\n");
+                    throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Int tag '{intTag}' not found in item '{itemTag}'\n");
                 }
             }
-            throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
+            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
         }
 
-        // Retrieve a string value from SaveCustomObject based on item and string tags.
+        /// <summary>
+        /// Retrieve a string value from SaveCustomObject based on item and string tags.
+        /// Throws KeyNotFoundException if the tag is not found.
+        /// </summary>
         public static string GetString(string itemTag, string stringTag)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return "Error: SaveCustomObject is null!";
             }
 
@@ -112,19 +157,22 @@ namespace SaveCustomGame
                             return customString.stringValue;
                         }
                     }
-                    throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - String tag '{stringTag}' not found in item '{itemTag}'\n");
+                    throw new KeyNotFoundException($"{GetCallingMethodInfo()} - String tag '{stringTag}' not found in item '{itemTag}'\n");
                 }
             }
-            throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
+            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
         }
 
-        // Retrieve a boolean value from SaveCustomObject based on item and bool tags.
+        /// <summary>
+        /// Retrieve a boolean value from SaveCustomObject based on item and bool tags.
+        /// Throws KeyNotFoundException if the tag is not found.
+        /// </summary>
         public static bool GetBool(string itemTag, string boolTag)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return false;
             }
 
@@ -141,19 +189,100 @@ namespace SaveCustomGame
                             return customBool.boolValue;
                         }
                     }
-                    throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Bool tag '{boolTag}' not found in item '{itemTag}'\n");
+                    throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Bool tag '{boolTag}' not found in item '{itemTag}'\n");
                 }
             }
-            throw new KeyNotFoundException($"{ExceptionUtility.GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
+            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Item tag '{itemTag}' not found\n");
         }
 
-        // Set a float value in SaveCustomObject based on item and float tags.
+        /// <summary>
+        /// Set a Vector4-compatible value (Vector2, Vector3, Vector4, or Quaternion) in SaveCustomObject.
+        /// Logs an error if the type is unsupported.
+        /// </summary>
+        public static void SetVector(string itemTag, string vectorTag, object newValue)
+        {
+            if (newValue is Vector2 v2)
+            {
+                SetVector4(itemTag, vectorTag, new Vector4(v2.x, v2.y, 0f, 0f));
+            }
+            else if (newValue is Vector3 v3)
+            {
+                SetVector4(itemTag, vectorTag, new Vector4(v3.x, v3.y, v3.z, 0f));
+            }
+            else if (newValue is Vector4 v4)
+            {
+                SetVector4(itemTag, vectorTag, v4);
+            }
+            else if (newValue is Quaternion q)
+            {
+                SetVector4(itemTag, vectorTag, new Vector4(q.x, q.y, q.z, q.w));
+            }
+            else
+            {
+                Debug.LogError($"{GetCallingMethodInfo()} - Unsupported type for SetVector.\n");
+            }
+        }
+
+        /// <summary>
+        /// Set a Vector4 value in SaveCustomObject based on item and vector tags.
+        /// Creates new items or tags if they do not exist.
+        /// </summary>
+        public static void SetVector4(string itemTag, string vectorTag, Vector4 newValue)
+        {
+            var saveObject = GetSaveCustomObject();
+            if (saveObject == null)
+            {
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                return;
+            }
+
+            // Find the item with the specified itemTag.
+            foreach (var customItem in saveObject.saveCustomItems)
+            {
+                if (customItem.itemTag == itemTag)
+                {
+                    // Find the vector with the specified vectorTag.
+                    foreach (var customVector in customItem.itemVector)
+                    {
+                        if (customVector.vectorTag == vectorTag)
+                        {
+                            customVector.vectorValue = newValue;
+                            return;
+                        }
+                    }
+
+                    // Vector tag not found, create a new one.
+                    SaveCustomVector newCustomVector = new()
+                    {
+                        vectorTag = vectorTag,
+                        vectorValue = newValue
+                    };
+
+                    customItem.itemVector.Add(newCustomVector);
+                    return;
+                }
+            }
+
+            // Item tag not found, create a new item with the vector.
+            SaveCustomItem newCustomItem = new()
+            {
+                itemTag = itemTag,
+                itemVector = new List<SaveCustomVector> { new() { vectorTag = vectorTag, vectorValue = newValue } }
+            };
+
+            saveObject.saveCustomItems.Add(newCustomItem);
+        }
+
+        /// <summary>
+        /// Set a float value in SaveCustomObject based on item and float tags.
+        /// Creates new items or tags if they do not exist.
+        /// </summary>
         public static void SetFloat(string itemTag, string floatTag, float newValue)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return;
             }
 
@@ -194,13 +323,16 @@ namespace SaveCustomGame
             saveObject.saveCustomItems.Add(newCustomItem);
         }
 
-        // Set an integer value in SaveCustomObject based on item and int tags.
+        /// <summary>
+        /// Set an integer value in SaveCustomObject based on item and int tags.
+        /// Creates new items or tags if they do not exist.
+        /// </summary>
         public static void SetInt(string itemTag, string intTag, int newValue)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return;
             }
 
@@ -241,13 +373,16 @@ namespace SaveCustomGame
             saveObject.saveCustomItems.Add(newCustomItem);
         }
 
-        // Set a string value in SaveCustomObject based on item and string tags.
+        /// <summary>
+        /// Set a string value in SaveCustomObject based on item and string tags.
+        /// Creates new items or tags if they do not exist.
+        /// </summary>
         public static void SetString(string itemTag, string stringTag, string newValue)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return;
             }
 
@@ -288,13 +423,16 @@ namespace SaveCustomGame
             saveObject.saveCustomItems.Add(newCustomItem);
         }
 
-        // Set a boolean value in SaveCustomObject based on item and bool tags.
+        /// <summary>
+        /// Set a boolean value in SaveCustomObject based on item and bool tags.
+        /// Creates new items or tags if they do not exist.
+        /// </summary>
         public static void SetBool(string itemTag, string boolTag, bool newValue)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return;
             }
 
@@ -335,21 +473,23 @@ namespace SaveCustomGame
             saveObject.saveCustomItems.Add(newCustomItem);
         }
 
-        // Capture a screenshot using a target camera and assign it to SaveCustomObject.
+        /// <summary>
+        /// Capture a screenshot using a target camera and assign it to SaveCustomObject.
+        /// Respects pixel limits and aspect ratio defined in the object.
+        /// </summary>
         public static void CaptureScreenshot(Camera targetCamera)
         {
             var saveObject = GetSaveCustomObject();
             if (saveObject == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
                 return;
             }
 
             // Check if either targetCamera is not defined.
             if (targetCamera == null)
             {
-                // Log an error if targetCamera is not defined.
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - Camera are not defined!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - Camera are not defined!\n");
                 return; // Exit the method if either parameter is null.
             }
 
@@ -389,13 +529,15 @@ namespace SaveCustomGame
             targetCamera.targetTexture = null; // Set the target texture of the camera back to null.
         }
 
-        // Render a screenshot using the provided byte array and return it as a Texture2D.
+        /// <summary>
+        /// Render a screenshot from a byte array and return it as a Texture2D.
+        /// </summary>
         public static Texture2D RenderScreenshot(byte[] screenshot)
         {
             // Check if the screenshot byte array is not defined.
             if (screenshot == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - screenshot are not defined!\n"); // Log an error if the screenshot is not defined.
+                Debug.LogError($"{GetCallingMethodInfo()} - screenshot are not defined!\n");
                 return null; // Return null if the screenshot is null.
             }
 
@@ -404,13 +546,15 @@ namespace SaveCustomGame
             return texture; // Return the generated texture.
         }
 
-        // Convert a Texture2D to a Sprite.
+        /// <summary>
+        /// Convert a Texture2D to a Sprite using full dimensions and centered pivot.
+        /// </summary>
         public static Sprite TextureToSprite(Texture2D texture)
         {
             // Check if the provided texture is not defined.
             if (texture == null)
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - The texture is empty!\n"); // Log an error if the texture is not defined.
+                Debug.LogError($"{GetCallingMethodInfo()} - The texture is empty!\n");
                 return null; // Return null if the texture is null.
             }
 
@@ -420,7 +564,10 @@ namespace SaveCustomGame
             return sprite; // Return the created sprite.
         }
 
-        // Find and assign the SaveCustomInScene component if found in the scene.
+        /// <summary>
+        /// Find and return the SaveCustomInScene component from the scene if present.
+        /// Logs errors if not found.
+        /// </summary>
         public static SaveCustomInScene GetComponentSaveCustomInScene()
         {
             // Find the GameObject named "[Save Custom Object]" in the scene.
@@ -432,26 +579,25 @@ namespace SaveCustomGame
                 // Attempt to get the SaveCustomInScene component attached to the GameObject.
                 if (saveCustomObject.TryGetComponent(out SaveCustomInScene saveCustomInScene))
                 {
-                    // Log a success message if the component is assigned successfully.
-                    Debug.Log($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomInScene script has been assigned successfully!\n");
+                    Debug.Log($"{GetCallingMethodInfo()} - SaveCustomInScene script has been assigned successfully!\n");
                     return saveCustomInScene;
                 }
                 else
                 {
-                    // Log an error if the SaveCustomInScene component is not found in the GameObject.
-                    Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomInScene not found in Save Custom Object!\n");
+                    Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomInScene not found in Save Custom Object!\n");
                     return null;
                 }
             }
             else
             {
-                // Log an error if the GameObject named "[Save Custom Object]" is not found in the scene.
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - Save Custom Object not found!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - Save Custom Object not found!\n");
                 return null;
             }
         }
 
-        // Enable auto-saving by setting the autosaveEnabled flag to true in SaveCustomObject.
+        /// <summary>
+        /// Enable auto-saving by setting the autosaveEnabled flag to true in SaveCustomObject.
+        /// </summary>
         public static void EnableAutoSave()
         {
             var saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
@@ -462,11 +608,13 @@ namespace SaveCustomGame
             }
             else
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n"); // Log an error if the SaveCustomObject is null.
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
             }
         }
 
-        // Disable auto-saving by setting the autosaveEnabled flag to false in SaveCustomObject.
+        /// <summary>
+        /// Disable auto-saving by setting the autosaveEnabled flag to false in SaveCustomObject.
+        /// </summary>
         public static void DisableAutoSave()
         {
             var saveCustomObject = GetSaveCustomObject(); // Load the SaveCustomObject from Resources.
@@ -477,11 +625,14 @@ namespace SaveCustomGame
             }
             else
             {
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - SaveCustomObject is null!\n"); // Log an error if the SaveCustomObject is null.
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null!\n");
             }
         }
 
-        // Trigger an autosave event by calling SaveAutoGame() on AutoSaveCustom component.
+        /// <summary>
+        /// Trigger an autosave event by calling SaveAutoGame() on AutoSaveCustom component.
+        /// Logs the operation or errors if components are missing.
+        /// </summary>
         public static void SaveEvent()
         {
             var saveCustomObject = GameObject.Find("[Save Custom Object]"); // Find the GameObject named "[Save Custom Object]" in the scene.
@@ -493,18 +644,16 @@ namespace SaveCustomGame
                 if (saveCustomObject.TryGetComponent(out AutoSaveCustom autoSaveCustom))
                 {
                     autoSaveCustom.SaveAutoGame(); // Trigger the SaveAutoGame method on the AutoSaveCustom component.
-                    Debug.Log($"{ExceptionUtility.GetCallingMethodInfo()} - Autosave has been done!\n"); // Log a success message after triggering the save event.
+                    Debug.Log($"{GetCallingMethodInfo()} - Autosave has been done!\n");
                 }
                 else
                 {
-                    // Log an error if the AutoSaveCustom component is not found in the GameObject.
-                    Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - AutoSaveCustom not found in Save Custom Object!\n");
+                    Debug.LogError($"{GetCallingMethodInfo()} - AutoSaveCustom not found in Save Custom Object!\n");
                 }
             }
             else
             {
-                // Log an error if the GameObject named "[Save Custom Object]" is not found in the scene.
-                Debug.LogError($"{ExceptionUtility.GetCallingMethodInfo()} - Save Custom Object not found!\n");
+                Debug.LogError($"{GetCallingMethodInfo()} - Save Custom Object not found!\n");
             }
         }
     }

@@ -89,6 +89,12 @@ public class SaveMenuManager : MonoBehaviour
         SetTitle();
     }
 
+    // Clear existing preview images and textures.
+    private void OnDisable()
+    {
+        ClearRawImagesAndTextures();
+    }
+
     /// <summary>
     /// Sets the title text in the UI based on the current save number.
     /// Displays "Autosave" if the save number is 0, otherwise displays the regular save name.
@@ -260,12 +266,16 @@ public class SaveMenuManager : MonoBehaviour
     /// </summary>
     public void ClearRawImagesAndTextures()
     {
-        rawImageSave1.texture = null;
-        rawImageSave2.texture = null;
-        rawImageSave3.texture = null;
-        rawImageSave4.texture = null;
-        rawImageSave5.texture = null;
-        rawImageSave6.texture = null;
+        RawImage[] rawImages = { rawImageSave1, rawImageSave2, rawImageSave3, rawImageSave4, rawImageSave5, rawImageSave6 };
+
+        foreach (var rawImage in rawImages)
+        {
+            if (rawImage.texture != null)
+            {
+                Destroy(rawImage.texture);
+                rawImage.texture = null;
+            }
+        }
     }
 
     /// <summary>
@@ -277,9 +287,7 @@ public class SaveMenuManager : MonoBehaviour
         saveCustomInScene.fileName = $"{inputField.text} - {button}"; // Construct the file name using the input field value and selected slot number.
         saveCustomInScene.SaveData(); // Save the current game data to the specified file.
 
-        ClearRawImagesAndTextures(); // Clear existing preview images and textures.
         LoadData(); // Reload data to reflect the new save in the UI.
-
         confirmationPanel.SetActive(false); // Close the confirmation dialog.
     }
 

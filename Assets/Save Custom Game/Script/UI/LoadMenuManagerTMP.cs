@@ -94,6 +94,12 @@ public class LoadMenuManagerTMP : MonoBehaviour
         SetTitle();
     }
 
+    // Clear existing preview images and textures.
+    private void OnDisable()
+    {
+        ClearRawImagesAndTextures();
+    }
+
     /// <summary>
     /// Sets the title text in the UI based on the current load number.
     /// Displays "Autosave" if the load number is 0, otherwise displays the regular load name.
@@ -257,12 +263,16 @@ public class LoadMenuManagerTMP : MonoBehaviour
     /// </summary>
     public void ClearRawImagesAndTextures()
     {
-        rawImageLoad1.texture = null;
-        rawImageLoad2.texture = null;
-        rawImageLoad3.texture = null;
-        rawImageLoad4.texture = null;
-        rawImageLoad5.texture = null;
-        rawImageLoad6.texture = null;
+        RawImage[] rawImages = { rawImageLoad1, rawImageLoad2, rawImageLoad3, rawImageLoad4, rawImageLoad5, rawImageLoad6 };
+
+        foreach (var rawImage in rawImages)
+        {
+            if (rawImage.texture != null)
+            {
+                Destroy(rawImage.texture);
+                rawImage.texture = null;
+            }
+        }
     }
 
     /// <summary>
@@ -287,9 +297,7 @@ public class LoadMenuManagerTMP : MonoBehaviour
                 break;
         }
 
-        ClearRawImagesAndTextures(); // Clear existing preview images and textures.
         saveCustomInScene.LoadData(); // Load the selected game.
-
         confirmationPanel.SetActive(false); // Close the confirmation dialog.
     }
 

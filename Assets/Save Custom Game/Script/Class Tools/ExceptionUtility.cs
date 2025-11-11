@@ -5,6 +5,7 @@
  *              where a method was called, excluding internal utility frames. 
  *              This is especially useful for logging the exact source of errors 
  *              or events in the SaveCustomGame system.
+ *              
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -17,58 +18,75 @@ namespace SaveCustomGame
 {
     public static class ExceptionUtility
     {
+        #region === Public Methods ===
+
         /// <summary>
-        /// Retrieves the file path and line number of the external method that called this utility.
-        /// Skips internal frames from SaveDataUtility and ExceptionUtility to return the most relevant
-        /// call location. Useful for pinpointing the origin of events or errors in debug logs.
+        /// Retrieves the file path and line number of the external method that invoked this utility.
+        /// Skips internal frames from SaveDataUtility and ExceptionUtility to return the most relevant call source.
+        /// Useful for pinpointing where events or errors originated in the debug logs.
         /// </summary>
         public static string GetCallingMethodInfo()
         {
-            var stackTrace = new StackTrace(true); // Create a stack trace to capture method call information.
-            var frames = stackTrace.GetFrames(); // Get the stack frames from the stack trace.
+            // Create a stack trace containing method call information, including file and line number.
+            var stackTrace = new StackTrace(true);
 
+            // Retrieve the stack frames from the created stack trace.
+            var frames = stackTrace.GetFrames();
+
+            // Ensure stack frames exist before processing.
             if (frames != null)
             {
-                bool foundSaveDataUtility = false; // Flag to track if SaveDataUtility methods are encountered.
+                // This flag tracks whether a SaveDataUtility method was encountered.
+                bool foundSaveDataUtility = false;
 
-                // Iterate through each stack frame.
+                // Iterate through the stack frames to find the relevant external caller.
                 foreach (var frame in frames)
                 {
-                    // Get the method information from the stack frame.
+                    // Obtain the method associated with this stack frame.
                     var method = frame.GetMethod();
                     var declaringType = method?.DeclaringType;
 
+                    // Ensure the declaring type is valid before reading its information.
                     if (declaringType != null)
                     {
+                        // Full name of the declaring type for comparison.
                         var typeName = declaringType.FullName;
 
-                        // Check if the method is not from SaveDataUtility or ExceptionUtility.
+                        // Check if this frame belongs to neither SaveDataUtility nor ExceptionUtility.
                         if (typeName != typeof(SaveDataUtility).FullName && typeName != typeof(ExceptionUtility).FullName)
                         {
-                            // Retrieve file name and line number information from the stack frame.
+                            // Extract source file name and line number.
                             var fileName = frame.GetFileName();
                             var lineNumber = frame.GetFileLineNumber();
 
-                            // Ensure the file name and line number are valid.
+                            // Validate the extracted file information.
                             if (!string.IsNullOrEmpty(fileName) && lineNumber > 0)
                             {
-                                var filePath = Regex.Replace(fileName, @"^.*?Assets", "Assets"); // Modify file path to show it relative to the project's Assets folder.
-                                return $"(at {filePath}:{lineNumber})"; // Format and return the method call's file path and line number.
+                                // Convert full system file path to a Unity project relative path.
+                                var filePath = Regex.Replace(fileName, @"^.*?Assets", "Assets");
+
+                                // Return formatted call site information.
+                                return $"(at {filePath}:{lineNumber})";
                             }
                         }
                         else if (typeName == typeof(SaveDataUtility).FullName)
                         {
-                            foundSaveDataUtility = true; // Flag that SaveDataUtility methods have been encountered.
+                            // Mark that a SaveDataUtility call was detected.
+                            foundSaveDataUtility = true;
                         }
                         else if (typeName == typeof(ExceptionUtility).FullName && foundSaveDataUtility)
                         {
-                            break; // Stop processing when ExceptionUtility methods are encountered after SaveDataUtility.
+                            // Stop scanning after returning from SaveDataUtility into ExceptionUtility.
+                            break;
                         }
                     }
                 }
             }
 
-            return string.Empty; // Return an empty string if method call information couldn't be retrieved.
+            // Return empty string if no suitable call information was located.
+            return string.Empty;
         }
+
+        #endregion
     }
 }

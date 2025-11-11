@@ -5,6 +5,7 @@
  *              GameObject in the scene with SaveCustomInScene and AutoSaveCustom 
  *              components. Ensures consistent and centralized save management 
  *              across scenes using runtime initialization.
+ *              
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -16,45 +17,73 @@ namespace SaveCustomGame
 {
     public class SaveCustomInitialization
     {
+        /// <summary>
+        /// Holds the loaded SaveCustomObject instance used across the game.
+        /// </summary>
         public static SaveCustomObject saveCustomObject; // Static reference to the SaveCustomObject.
 
-        // Method to be executed on runtime initialization.
+        #region === Initialization Method ===
+
+        /// <summary>
+        /// Entry point invoked when the game starts. It loads the SaveCustomObject data,
+        /// creates a persistent GameObject in the scene, attaches relevant components,
+        /// and ensures the save system persists across scene loads.
+        /// </summary>
         [RuntimeInitializeOnLoadMethod]
         public static void RunGameInitialization()
         {
-            Debug.Log("Save Custom Initialization"); // Log initialization message.
-            LoadSettingsData(); // Load Save Custom Object Data from Resources.
+            // Inform in the console that the save system initialization has started.
+            Debug.Log("Save Custom Initialization.");
 
-            // Check if SaveCustomObject is loaded.
+            // Load Save Custom Object Data stored in Resources.
+            LoadSettingsData();
+
+            // Verify if the SaveCustomObject was successfully loaded.
             if (saveCustomObject == null)
             {
-                // Log an error if SaveCustomObject is not found.
-                Debug.LogError("Could not find saveCustomObject with name 'Save Custom Object Data'");
+                // If not found, notify via console and stop the initialization.
+                Debug.LogError("Could not find SaveCustomObject with name 'Save Custom Object Data'.");
                 return;
             }
 
-            GameObject saveCustomGameObject = new("[Save Custom Object]"); // Create a new GameObject named "[Save Custom Object]".
+            // Create a new GameObject to persist the save system during runtime.
+            GameObject saveCustomGameObject = new("[Save Custom Object]");
 
-            // Add SaveCustomInScene and AutoSaveCustom components to the GameObject.
+            // Attach component responsible for holding the SaveCustomObject instance.
             var saveCustomInScene = saveCustomGameObject.AddComponent<SaveCustomInScene>();
+
+            // Attach component responsible for handling autosave behavior.
             var autoSaveCustom = saveCustomGameObject.AddComponent<AutoSaveCustom>();
 
-            // Assign references between components and objects.
+            // Pass the loaded SaveCustomObject reference to the SaveCustomInScene component.
             saveCustomInScene.saveCustomObject = saveCustomObject;
+
+            // Link the AutoSaveCustom component to SaveCustomInScene to operate correctly.
             autoSaveCustom.saveCustomInScene = saveCustomInScene;
 
-            Object.DontDestroyOnLoad(saveCustomGameObject); // Ensure the GameObject persists across scene changes.
+            // Ensure this GameObject will not be destroyed when switching scenes.
+            Object.DontDestroyOnLoad(saveCustomGameObject);
         }
 
-        // Method to load Save Custom Object Data from Resources.
+        #endregion
+
+        #region === Load Save Settings Data ===
+
+        /// <summary>
+        /// Loads the SaveCustomObject asset from the Resources folder. Logs warnings if not found.
+        /// </summary>
         private static void LoadSettingsData()
         {
+            // Attempt to load the SaveCustomObject asset by name.
             saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
 
+            // Log an error if the asset could not be located.
             if (saveCustomObject == null)
             {
                 Debug.LogError("Failed to load Save Custom Object Data from Resources.");
             }
         }
+
+        #endregion
     }
 }

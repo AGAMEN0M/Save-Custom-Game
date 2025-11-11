@@ -1,11 +1,10 @@
 /*
  * ---------------------------------------------------------------------------
  * Description: Handles runtime auto-save control and toggling of GameObjects 
- *              for testing and debugging purposes. Enables auto-save and 
- *              triggers a save event when a specified key is pressed, and disables 
- *              auto-save using another key. Also includes a method to toggle the 
- *              active state of an array of GameObjects. Useful for quick testing 
- *              of save functionality and dynamic object activation during gameplay.
+ *              for testing and debugging purposes. Provides feedback in the 
+ *              console when actions occur. Allows testing of save functionality, 
+ *              auto-save toggle, and dynamic activation of objects in-game. 
+ *              
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -18,28 +17,78 @@ using static SaveCustomGame.SaveDataUtility;
 [AddComponentMenu("UI/Save Custom Game/In Background/Test Save Custom")]
 public class TestSaveCustom : MonoBehaviour
 {
-    [Header("Settings")]
-    [SerializeField] private KeyCode activateAndSave = KeyCode.Space; // Key to activate and trigger auto-save.
-    [SerializeField] private KeyCode disable = KeyCode.Escape; // Key to disable auto-save.
-    [Space(10)]
-    [SerializeField] private GameObject[] gameObjects; // Array of GameObjects to toggle.
+    #region === Inspector Fields ===
 
-    private void LateUpdate()
+    [Header("Key Settings")]
+    [SerializeField, Tooltip("Key to activate auto-save and trigger a save event.")]
+    private KeyCode activateAndSave = KeyCode.Space;
+
+    [SerializeField, Tooltip("Key to disable auto-save.")]
+    private KeyCode disable = KeyCode.Escape;
+
+    [Header("Test Objects")]
+    [SerializeField, Tooltip("Array of GameObjects to toggle active state for testing.")]
+    private GameObject[] gameObjects;
+
+    [Header("Optional Save Slot")]
+    [SerializeField, Tooltip("Optional: Specific save slot to test saving.")]
+    private int testSaveSlot = 1;
+
+    #endregion
+
+    #region === Unity Events ===
+
+    private void Update() => HandleInput();
+
+    #endregion
+
+    #region === Input Handling ===
+
+    /// <summary>
+    /// Checks for key presses to activate, save, or disable auto-save.
+    /// </summary>
+    private void HandleInput()
     {
-        // Check if the key for activation and save is pressed.
         if (Input.GetKeyDown(activateAndSave))
         {
             // Enable auto-save and trigger save event.
-            EnableAutoSave();
-            SaveEvent();
+            SetAutoSave(true);
+            SaveTestSlot();
         }
 
-        // Check if the key for disabling auto-save is pressed.
         if (Input.GetKeyDown(disable))
         {
-            DisableAutoSave(); // Disable auto-save.
+            // Disable auto-save.
+            SetAutoSave(false);
+            Debug.Log("[TestSaveCustom] Auto-save disabled.", this);
         }
     }
+
+    #endregion
+
+    #region === Save Testing ===
+
+    /// <summary>
+    /// Performs a save event and provides console feedback.
+    /// Saves in the optional test slot if assigned.
+    /// </summary>
+    private void SaveTestSlot()
+    {
+        if (testSaveSlot > 0)
+        {
+            SaveEvent(); // Trigger save event, could be modified to specify slot in future.
+            Debug.Log($"[TestSaveCustom] Save triggered in slot {testSaveSlot}.", this);
+        }
+        else
+        {
+            SaveEvent();
+            Debug.Log("[TestSaveCustom] Save triggered (no specific slot).", this);
+        }
+    }
+
+    #endregion
+
+    #region === GameObject Toggle ===
 
     /// <summary>
     /// Toggles the active state of each GameObject in the assigned array.
@@ -48,10 +97,13 @@ public class TestSaveCustom : MonoBehaviour
     /// </summary>
     public void SwitchGameObject()
     {
-        // Loop through each GameObject in the gameObjects array.
-        foreach (GameObject obj in gameObjects)
-        {            
-            obj.SetActive(!obj.activeSelf); // Invert the current activation state of the GameObject.
+        foreach (var obj in gameObjects)
+        {
+            obj.SetActive(!obj.activeSelf);
         }
+
+        Debug.Log("[TestSaveCustom] Toggled GameObjects state.", this);
     }
+
+    #endregion
 }

@@ -3,9 +3,10 @@
  * Description: Handles scene-specific save and load operations for the game. 
  *              Tracks elapsed game time, manages screenshot capturing, updates 
  *              SaveCustomObject with current scene data, and serializes data to 
- *              disk or PlayerPrefs. Supports automatic camera detection and provides 
- *              reset functionality for save slots. Designed to work seamlessly 
- *              with the auto-save system and multiple storage options.
+ *              disk or PlayerPrefs. Supports automatic camera detection and 
+ *              provides reset functionality for save slots. Designed to work 
+ *              seamlessly with the auto-save system and multiple storage options.
+ *              
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
  * ---------------------------------------------------------------------------
@@ -22,209 +23,274 @@ namespace SaveCustomGame
     [AddComponentMenu("UI/Save Custom Game/In Background/Save Custom In Scene")]
     public class SaveCustomInScene : MonoBehaviour
     {
-        public SaveCustomObject saveCustomObject; // Reference to the SaveCustomObject.
-        [SerializeField] private string gameTime = "00:00:00"; // Current in-game time.
-        public string fileName = "SavingData"; // Default file name for saving data.
-        public string savePath; // The path where the save file will be stored.
-        public string sceneName; // Name of the current scene.
-        public Camera sceneCamera; // Reference to the camera capturing the scene.
+        #region === Serialized Fields ===
 
-        private float elapsedTime = 0f; // Elapsed time since the start of the game.
+        [Tooltip("Reference to the SaveCustomObject instance that holds save configuration and data.")]
+        public SaveCustomObject saveCustomObject; // Reference to SaveCustomObject that stores game save data and settings.
+
+        [SerializeField, Tooltip("Formatted in-game time string.")]
+        private string gameTime = "00:00:00"; // Stores formatted elapsed gameplay time.
+
+        [Tooltip("The filename used for saving data.")]
+        public string fileName = "SavingData"; // Filename used when writing save data.
+
+        [Tooltip("The full path where the save file will be stored.")]
+        public string savePath; // Full resolved save path.
+
+        [Tooltip("List of active scenes recorded during the save process.")]
+        public List<string> sceneNames = new(); // Stores the names of currently loaded scenes.
+
+        [Tooltip("Reference to the camera used for screenshot capturing.")]
+        public Camera sceneCamera; // Reference to camera used to capture a screenshot for the save slot.
+
+        #endregion
+
+        #region === Private Fields ===
+
+        private float elapsedTime = 0f; // Accumulates gameplay time.
+
+        #endregion
+
+        #region === Public Methods ===
 
         /// <summary>
-        /// Resets the in-game timer and clears relevant fields in the SaveCustomObject,
-        /// including screenshot, game time, and scene name.
+        /// Resets in-game time and clears stored save data fields such as screenshot,
+        /// formatted time value and scene list.
         /// </summary>
         public void ResetSave()
         {
-            elapsedTime = 0f; // reset the elapsed time.
-
-            // Reset various properties in saveCustomObject.
-            saveCustomObject.screenshot = null;
-            saveCustomObject.gameTime = "00:00:00";
-            saveCustomObject.sceneName = "";
-        }
-
-        // FixedUpdate is called at fixed intervals, primarily used for physics calculations.
-        private void FixedUpdate()
-        {
-            elapsedTime += Time.fixedDeltaTime; // Increment the elapsed time by the fixed time interval.
-            UpdateGameTime(); // Update the in-game time based on the elapsed time.
-            UpdateSaveCustomObject(); // Update the SaveCustomObject with the current game time and scene name.
-        }
-
-        // UpdateSaveCustomObject method updates the SaveCustomObject with relevant game data.
-        private void UpdateSaveCustomObject()
-        {
-            saveCustomObject.gameTime = gameTime; // Update the SaveCustomObject's gameTime variable with the current in-game time.
-
-            // Get the name of the active scene and assign it to the SaveCustomObject's sceneName variable.
-            sceneName = SceneManager.GetActiveScene().name;
-            saveCustomObject.sceneName = sceneName;
-        }
-
-        // UpdateGameTime method converts elapsed time into a formatted in-game time.
-        private void UpdateGameTime()
-        {
-            // Calculate hours, minutes, and seconds from the elapsed time.
-            int hours = Mathf.FloorToInt(elapsedTime / 3600f);
-            int minutes = Mathf.FloorToInt((elapsedTime % 3600f) / 60f);
-            int seconds = Mathf.FloorToInt(elapsedTime % 60f);
-
-            // Format the calculated time into a string in the "hours:minutes:seconds" format with at least 2 digits for hours, minutes, and seconds.
-            gameTime = string.Format($"{hours:D2}:{minutes:D2}:{seconds:D2}");
-        }
-
-        // GetCamera method finds and assigns the appropriate camera for capturing the scene.
-        private void GetCamera()
-        {
-            var playerObject = GameObject.FindGameObjectWithTag("Player"); // Find the GameObject tagged as "Player" in the scene.
-
-            // Check if the playerObject is not null.
-            if (playerObject != null)
-            {
-                // Try to get the Camera component from the playerObject.
-                if (!playerObject.TryGetComponent<Camera>(out var playerCamera))
-                {
-                    var childCameras = playerObject.GetComponentsInChildren<Camera>(); // If the Camera component is not found directly, try to get child Cameras.
-                    if (childCameras.Length > 0) { playerCamera = childCameras[0]; } // If child cameras exist, assign the first one found.
-                }
-
-                if (playerCamera != null) { sceneCamera = playerCamera; } // If playerCamera is found, assign it to the sceneCamera variable.
-            }
-
-            if (sceneCamera == null) { sceneCamera = Camera.main; } // If sceneCamera is still null, try to find the main Camera in the scene.
-
-            // If no Camera is found yet, find any Camera in the scene.
-            if (sceneCamera == null)
-            {
-                var allCameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
-                if (allCameras.Length > 0) { sceneCamera = allCameras[0]; } // If any Cameras are found, assign the first one.
-            }
-
-            if (sceneCamera == null) { Debug.LogError("No cameras found at the scene."); } // If no Camera is found after searching, log an error message.
+            elapsedTime = 0f; // Reset total elapsed time to zero.
+            saveCustomObject.screenshot = null; // Remove any previously saved screenshot.
+            saveCustomObject.gameTime = "00:00:00"; // Reset stored time text.
+            saveCustomObject.sceneNames.Clear(); // Remove stored scenes list.
         }
 
         /// <summary>
-        /// Captures the current game state, including a screenshot, time, and scene info,
-        /// and serializes it to JSON format. The data is then saved to disk or PlayerPrefs
-        /// depending on the SaveCustomObject settings.
+        /// Captures the current game state, takes a screenshot, stores scene info,
+        /// converts the data to JSON and saves it either to PlayerPrefs or to disk
+        /// depending on configured SaveCustomObject settings.
         /// </summary>
         public void SaveData()
         {
-            // Check if the sceneCamera reference is null.
-            if (sceneCamera == null)
-            {
-                GetCamera(); // Get the appropriate camera to capture the scene.
-            }
+            // Ensure a valid camera exists for screenshot capture.
+            if (sceneCamera == null) GetCamera(); // Attempt to locate and assign a camera.
 
-            SaveDataUtility.CaptureScreenshot(sceneCamera); // Capture a screenshot and update SaveCustomObject's screenshot data.
+            // Capture screenshot and assign byte data to saveCustomObject.screenshot.
+            SaveDataUtility.CaptureScreenshot(sceneCamera); // Screenshot is processed internally.
 
-            // Create a SaveCustomFile object with relevant game data.
+            // Create a serializable data container with current save state values.
             SaveCustomFile data = new()
             {
                 screenshot = saveCustomObject.screenshot,
                 gameTime = saveCustomObject.gameTime,
-                sceneName = saveCustomObject.sceneName,
+                sceneNames = saveCustomObject.sceneNames,
                 saveCustomItems = saveCustomObject.saveCustomItems,
                 elapsedTime = elapsedTime,
             };
 
-            string jsonData = JsonUtility.ToJson(data); // Convert the data to JSON format.
+            // Convert data object into JSON format for storage.
+            string jsonData = JsonUtility.ToJson(data); // Serialization to JSON.
 
             try
             {
-                string savePath = "";
-                string directoryPath = "";
+                string savePath = ""; // Will hold the resolved save path.
+                string directoryPath = ""; // Will store the directory path for validation.
 
-                // Determine the save path based on specified settings.
+                // Determine save location based on user configuration.
                 if (saveCustomObject.localLow)
                 {
+                    // Save in Application.persistentDataPath (e.g., AppData LocalLow).
                     savePath = Path.Combine(Application.persistentDataPath, $"saves/{fileName}.json");
                 }
                 else if (saveCustomObject.playerPrefs)
                 {
-                    // Save data using PlayerPrefs if configured.
-                    PlayerPrefs.SetString(fileName, jsonData);
-                    return;
+                    // Save JSON into PlayerPrefs rather than disk.
+                    PlayerPrefs.SetString(fileName, jsonData); // Key-value storage.
+                    return; // Skip file writing.
                 }
                 else
                 {
+                    // Save data into project folder or build directory.
+                    string filePath = $"saves/{fileName}.json";
+
                 #if UNITY_EDITOR
-                    savePath = Path.Combine(Application.dataPath, $"Editor/saves/{fileName}.json");
+                    // When running inside the editor, save to Asset folder for accessibility.
+                    savePath = Path.Combine(Application.dataPath, $"Editor/{filePath}");
                 #else
-                    savePath = Path.Combine(Application.dataPath, $"saves/{fileName}.json");
+                    // When running in a build, save alongside game files.
+                    savePath = Path.Combine(Application.dataPath, filePath);
                 #endif
                 }
 
-                // Extract directory path and create directory if it doesn't exist.
+                // Extract directory component of the save path.
                 directoryPath = Path.GetDirectoryName(savePath);
-                Debug.Log($"Directory Path: {directoryPath}");
 
-                if (!Directory.Exists(directoryPath)) { Directory.CreateDirectory(directoryPath); }
+                // Ensure directory exists before attempting to write.
+                if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
 
-                // Write JSON data to the file.
-                File.WriteAllText(savePath, jsonData);
-                Debug.Log($"Save Path: {savePath}");
+                // Write JSON string to file.
+                File.WriteAllText(savePath, jsonData); // File I/O operation.
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error while saving data: {e.Message}"); // Log an error message if there's an exception while saving.
+                // Log save failure details.
+                Debug.LogError($"Error while saving data: {e.Message}.", this);
             }
 
-            sceneCamera = null; // Reset the sceneCamera reference.
+            // Clear the stored camera reference after saving to prevent stale camera usage.
+            sceneCamera = null;
         }
 
         /// <summary>
-        /// Loads saved game data from a file or PlayerPrefs, deserializes it,
-        /// and applies it to the SaveCustomObject and current scene.
+        /// Loads stored save data from either disk or PlayerPrefs and restores saved
+        /// scene states, elapsed time and stored screenshot snapshot.
         /// </summary>
         public void LoadData()
         {
-            // If the saveCustomObject is configured to use PlayerPrefs.
+            // Load from PlayerPrefs if selected.
             if (saveCustomObject.playerPrefs)
             {
-                string jsonData = PlayerPrefs.GetString(fileName); // Retrieve saved data from PlayerPrefs using the specified fileName.
-                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize JSON data into a SaveCustomFile object.
-                LoadDataString(data); // Load the data from PlayerPrefs.
+                string jsonData = PlayerPrefs.GetString(fileName); // Retrieve stored JSON string.
+                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize into SaveCustomFile structure.
+                LoadDataString(data); // Apply loaded data.
             }
-            else
+            else if (File.Exists(savePath))
             {
-                // Check if the file exists at the specified savePath.
-                if (File.Exists(savePath))
+                // Load from disk if file exists.
+                string jsonData = File.ReadAllText(savePath); // Read raw JSON text from file.
+                var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize data.
+                LoadDataString(data); // Apply loaded values.
+            }
+        }
+
+        #endregion
+
+        #region === Private Methods ===
+
+        private void FixedUpdate()
+        {
+            elapsedTime += Time.fixedDeltaTime; // Increment elapsed time each physics frame.
+            UpdateGameTime(); // Convert elapsedTime into formatted text.
+            UpdateSaveCustomObject(); // Update SaveCustomObject to reflect latest game state.
+        }
+
+        /// <summary>
+        /// Loads JSON data into SaveCustomObject fields and restores scenes.
+        /// </summary>
+        private void LoadDataString(SaveCustomFile data)
+        {
+            saveCustomObject.screenshot = data.screenshot; // Load screenshot byte array.
+            saveCustomObject.gameTime = data.gameTime; // Load formatted game time.
+            saveCustomObject.sceneNames = data.sceneNames; // Copy saved scene list.
+            elapsedTime = data.elapsedTime; // Restore gameplay time count.
+
+            saveCustomObject.saveCustomItems.Clear(); // Clear existing stored items.
+            saveCustomObject.saveCustomItems = data.saveCustomItems; // Restore saved items list.
+
+            // Restore loaded scenes in the correct additive order.
+            if (data.sceneNames != null && data.sceneNames.Count > 0)
+            {
+                SceneManager.LoadScene(data.sceneNames[0]); // Load primary scene.
+
+                // Load additional scenes without unloading first scene.
+                for (int i = 1; i < data.sceneNames.Count; i++)
                 {
-                    string jsonData = File.ReadAllText(savePath); // Read the JSON data from the file.
-                    var data = JsonUtility.FromJson<SaveCustomFile>(jsonData); // Deserialize JSON data into a SaveCustomFile object.
-                    LoadDataString(data); // Load the data from the file.
+                    SceneManager.LoadScene(data.sceneNames[i], LoadSceneMode.Additive); // Load successive scenes.
                 }
             }
         }
 
-        // This method loads data from a SaveCustomFile object into SaveCustomObject or scene.
-        private void LoadDataString(SaveCustomFile data)
+        /// <summary>
+        /// Updates SaveCustomObject with current game time string and active scenes list.
+        /// </summary>
+        private void UpdateSaveCustomObject()
         {
-            // Assign the loaded data to the appropriate variables/components in SaveCustomObject or the scene.
-            saveCustomObject.screenshot = data.screenshot;
-            saveCustomObject.gameTime = data.gameTime;
-            saveCustomObject.sceneName = data.sceneName;
-            elapsedTime = data.elapsedTime;
+            saveCustomObject.gameTime = gameTime; // Store updated formatted time.
+            sceneNames.Clear(); // Clear list before repopulating.
 
-            // Clear and load the SaveCustomItems from the loaded data.
-            saveCustomObject.saveCustomItems.Clear();
-            saveCustomObject.saveCustomItems = data.saveCustomItems;
+            // Iterate through all currently loaded scenes and record their names.
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i); // Retrieve scene index reference.
+                sceneNames.Add(scene.name); // Store scene name.
+            }
 
-            SceneManager.LoadScene(data.sceneName); // Load the scene associated with the saved data.
+            saveCustomObject.sceneNames = sceneNames; // Assign updated scene list.
         }
+
+        /// <summary>
+        /// Converts elapsed time to formatted HH:MM:SS string.
+        /// </summary>
+        private void UpdateGameTime()
+        {
+            // Calculate hours, minutes and seconds.
+            int hours = Mathf.FloorToInt(elapsedTime / 3600f);
+            int minutes = Mathf.FloorToInt((elapsedTime % 3600f) / 60f);
+            int seconds = Mathf.FloorToInt(elapsedTime % 60f);
+
+            // Format the numeric values into a readable string.
+            gameTime = $"{hours:D2}:{minutes:D2}:{seconds:D2}";
+        }
+
+        /// <summary>
+        /// Attempts to find a valid camera in the scene to use for screenshot capture.
+        /// </summary>
+        private void GetCamera()
+        {
+            var playerObject = GameObject.FindGameObjectWithTag("Player"); // Attempt to locate player object.
+
+            if (playerObject != null)
+            {
+                // Attempt to get camera directly from player object.
+                if (!playerObject.TryGetComponent<Camera>(out var playerCamera))
+                {
+                    // If player does not have a Camera, search its children.
+                    var childCameras = playerObject.GetComponentsInChildren<Camera>();
+                    if (childCameras.Length > 0) playerCamera = childCameras[0]; // Use the first available camera.
+                }
+
+                if (playerCamera != null) sceneCamera = playerCamera; // Assign discovered camera.
+            }
+
+            if (sceneCamera == null) sceneCamera = Camera.main; // Fallback to main camera.
+
+            if (sceneCamera == null)
+            {
+                // If no main camera exists, search all cameras in the scene.
+                var allCameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+                if (allCameras.Length > 0) sceneCamera = allCameras[0]; // Assign first found.
+            }
+
+            // Final fallback error warning if still missing.
+            if (sceneCamera == null) Debug.LogError("No cameras found at the scene.", this);
+        }
+
+        #endregion
     }
 
-    // SaveCustomFile class represents the serialized data structure for saving and loading game data.
-    [System.Serializable]
+    #region === SaveCustomFile Structure ===
+
+    /// <summary>
+    /// Serializable data structure used to save and load game state.
+    /// </summary>
+    [Serializable]
     public class SaveCustomFile
     {
-        public byte[] screenshot; // Byte array to store screenshot data.
-        public string gameTime = "00:00:00"; // String to store in-game time information.
-        public string sceneName; // String to store the name of the scene.
-        public List<SaveCustomItem> saveCustomItems; // List to store custom items for saving.
-        public float elapsedTime; // Floating-point value to store elapsed time.
+        [Tooltip("Stored screenshot byte data.")]
+        public byte[] screenshot;
+
+        [Tooltip("Recorded formatted game time.")]
+        public string gameTime = "00:00:00";
+
+        [Tooltip("Names of active scenes at the moment of saving.")]
+        public List<string> sceneNames;
+
+        [Tooltip("List of custom objects to save along with the game state.")]
+        public List<SaveCustomItem> saveCustomItems;
+
+        [Tooltip("Elapsed game time in seconds.")]
+        public float elapsedTime;
     }
+
+    #endregion
 }

@@ -2840,7 +2840,7 @@ GameObject:
   - component: {fileID: 8273760862622286365}
   - component: {fileID: 542670174941521601}
   m_Layer: 5
-  m_Name: Save
+  m_Name: <Manager>
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2880,26 +2880,33 @@ MonoBehaviour:
   confirmationPanel: {fileID: 6802051287594686717}
   confirmButton: {fileID: 1002459120402894958}
   cancelButton: {fileID: 7880143870917117006}
+  maxSavePages: -1
   titleLoad: {fileID: 5568767545680465533}
   text: Save
   textAutomatic: Autosave
   slots:
-  - button: {fileID: 8863926310844657426}
+  - path: 
+    button: {fileID: 8863926310844657426}
     image: {fileID: 9059132700445774205}
     label: {fileID: 846312902949715764}
-  - button: {fileID: 7695224203645660952}
+  - path: 
+    button: {fileID: 7695224203645660952}
     image: {fileID: 4042902753754993464}
     label: {fileID: 2258137467764220983}
-  - button: {fileID: 7457853408770657943}
+  - path: 
+    button: {fileID: 7457853408770657943}
     image: {fileID: 4910064978625162798}
     label: {fileID: 4514294207624046124}
-  - button: {fileID: 966673710888179425}
+  - path: 
+    button: {fileID: 966673710888179425}
     image: {fileID: 2758468301973630575}
     label: {fileID: 4813149080654550941}
-  - button: {fileID: 5014726734834197826}
+  - path: 
+    button: {fileID: 5014726734834197826}
     image: {fileID: 1135783978310772970}
     label: {fileID: 4194334509461185726}
-  - button: {fileID: 5695846372869862631}
+  - path: 
+    button: {fileID: 5695846372869862631}
     image: {fileID: 1794974677034227999}
     label: {fileID: 312645251925170334}
   right: {fileID: 7842668332076688506}

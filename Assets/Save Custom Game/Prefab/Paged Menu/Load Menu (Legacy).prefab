@@ -3457,7 +3457,7 @@ GameObject:
   - component: {fileID: 3661907268082732494}
   - component: {fileID: 8063076573968073818}
   m_Layer: 5
-  m_Name: Load
+  m_Name: <Manager>
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3497,6 +3497,7 @@ MonoBehaviour:
   confirmationPanel: {fileID: 4877023445980094584}
   confirmButton: {fileID: 7998591253330666067}
   cancelButton: {fileID: 2946115059394647498}
+  maxSavePages: -1
   titleLoad: {fileID: 7915228146089366101}
   text: Load
   textAutomatic: Autosave

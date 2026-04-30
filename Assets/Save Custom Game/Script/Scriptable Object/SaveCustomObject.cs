@@ -33,16 +33,16 @@ namespace SaveCustomGame
 
         [Header("Settings")]
         [Tooltip("Stores the screenshot data as a byte array for preview or restoration.")]
-        public byte[] screenshot; // Stores a screenshot as a byte array.
+        public byte[] screenshot;
 
         [Tooltip("Defines the maximum screenshot resolution to avoid memory overhead.")]
-        public int pixelLimit = 1000; // Pixel limit for screenshot.
+        public int pixelLimit = 500;
 
         [Tooltip("Stores the formatted game time string.")]
-        public string gameTime = "00:00:00"; // Tracks the game's time.
+        public string gameTime = "00:00:00";
 
         [Tooltip("Holds the list of currently loaded or relevant scenes.")]
-        public List<string> sceneNames; // Stores the name of the scene.
+        public List<string> sceneNames;
 
         #endregion
 
@@ -50,16 +50,16 @@ namespace SaveCustomGame
 
         [Header("Auto Save Settings")]
         [Tooltip("Enables or disables the autosave feature.")]
-        public bool autosaveEnabled; // Controls whether autosaving is enabled.
+        public bool autosaveEnabled;
 
         [Tooltip("Triggers save based on custom events.")]
-        public bool saveGameByEvent; // Controls event-triggered saving.
+        public bool saveGameByEvent;
 
         [Tooltip("Triggers save based on timed intervals.")]
-        public bool saveGameByTime; // Controls time-based saving.
+        public bool saveGameByTime;
 
         [Tooltip("Defines how often autosave occurs when enabled.")]
-        public float saveInterval = 60f; // Time interval for autosaving.
+        public float saveInterval = 60f;
 
         #endregion
 
@@ -67,7 +67,7 @@ namespace SaveCustomGame
 
         [Header("Saving Mode Settings")]
         [Tooltip("When enabled, the system saves in local game data storage.")]
-        public bool gameData;
+        public bool gameData = true;
 
         [Tooltip("When enabled, the system saves in Application.LocalLow.")]
         public bool localLow;
@@ -81,7 +81,7 @@ namespace SaveCustomGame
 
         [Header("Custom Items Settings")]
         [Tooltip("List of custom items containing multiple custom data types.")]
-        public List<SaveCustomItem> saveCustomItems; // List of custom items with various data types.
+        public List<SaveCustomItem> saveCustomItems;
 
         #endregion
     }
@@ -98,7 +98,7 @@ namespace SaveCustomGame
     {
         [Header("Item Settings")]
         [Tooltip("Identification reference used to access this item.")]
-        public string itemTag; // Identification tag for the custom item.
+        public string itemTag;
 
         [Header("Definitions")]
         [Tooltip("List of vector values associated with this tag.")]
@@ -195,48 +195,94 @@ namespace SaveCustomGame
     /// <summary>
     /// Provides Unity Editor menu functionality for creating the SaveCustomObject asset.
     /// </summary>
-    public class KeyboardControlListCreator
+    public class SaveCustomObjectCreator
     {
         /// <summary>
-        /// Creates a new SaveCustomObject asset in the Resources folder.
-        /// If the asset already exists, prompts the user whether to replace it.
+        /// Creates a new SaveCustomObject asset inside a "Save Custom Game/Resources" folder.
+        /// Searches the project for a valid base folder and creates missing directories if needed.
+        /// Prevents duplicate assets and allows replacement if one already exists.
         /// </summary>
-        [MenuItem("Assets/Create/Save Custom Game/Save Custom Object Data", false, 1)]
+        [MenuItem("Assets/Create/Tools/Save Custom Game/Save Custom Object Data")]
         public static void CreateCustomObjectData()
         {
-            string path = "Assets/Resources"; // Defines the folder where the asset will be stored.
-            string assetPath = $"{path}/Save Custom Object Data.asset"; // Full path to the asset.
+            // Attempt to locate "Save Custom Game" folder anywhere in the project.
+            string[] guids = AssetDatabase.FindAssets("Save Custom Game t:folder");
 
-            // Ensure the Resources folder exists. If not, create it.
-            if (!AssetDatabase.IsValidFolder(path))
-            {
-                AssetDatabase.CreateFolder("Assets", "Resources"); // Creates a Resources folder inside Assets.
-            }
+            string basePath = null;
 
-            // Check if an asset already exists at the specified path.
-            if (AssetDatabase.LoadAssetAtPath<SaveCustomObject>(assetPath) != null)
+            foreach (var guid in guids)
             {
-                // Ask the user whether to overwrite the existing asset.
-                if (!EditorUtility.DisplayDialog("Replace File", "There is already a 'Save Custom Object Data'. Do you want to replace it?", "Yes", "No"))
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+
+                // Ensure it's exactly the folder we want.
+                if (path.EndsWith("Save Custom Game"))
                 {
-                    return; // Abort operation if the user selects 'No'.
+                    basePath = path;
+                    break;
                 }
             }
 
-            // Create a new instance of SaveCustomObject.
+            // Fallback: if not found, create default structure.
+            if (string.IsNullOrEmpty(basePath))
+            {
+                basePath = "Assets/Save Custom Game";
+
+                // Create main folder if missing.
+                if (!AssetDatabase.IsValidFolder(basePath))
+                {
+                    AssetDatabase.CreateFolder("Assets", "Save Custom Game");
+                }
+            }
+
+            // Ensure Resources folder exists inside Save Custom Game.
+            string resourcesPath = $"{basePath}/Resources";
+
+            if (!AssetDatabase.IsValidFolder(resourcesPath))
+            {
+                AssetDatabase.CreateFolder(basePath, "Resources");
+            }
+
+            // Define final asset path.
+            string assetPath = $"{resourcesPath}/Save Custom Object Data.asset";
+
+            // Check if asset already exists.
+            var existing = AssetDatabase.LoadAssetAtPath<SaveCustomObject>(assetPath);
+
+            if (existing != null)
+            {
+                // Ask user if they want to replace existing asset.
+                if (!EditorUtility.DisplayDialog(
+                    "Replace File",
+                    "A 'Save Custom Object Data' already exists. Do you want to replace it?",
+                    "Yes",
+                    "No"))
+                {
+                    // Focus existing asset instead.
+                    Selection.activeObject = existing;
+                    EditorUtility.FocusProjectWindow();
+                    return;
+                }
+
+                // Delete existing asset before creating a new one.
+                AssetDatabase.DeleteAsset(assetPath);
+            }
+
+            // Create new ScriptableObject instance.
             var asset = ScriptableObject.CreateInstance<SaveCustomObject>();
 
-            // Save the newly created asset to the project.
+            // Create asset in the resolved path.
             AssetDatabase.CreateAsset(asset, assetPath);
 
-            // Mark the asset as modified and save the project.
+            // Mark as dirty and save changes.
             EditorUtility.SetDirty(asset);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            // Automatically highlight and select the created asset in the Project window.
+            // Focus and select the newly created asset.
             EditorUtility.FocusProjectWindow();
             Selection.activeObject = asset;
+
+            Debug.Log($"SaveCustomObject created at: {assetPath}");
         }
     }
 

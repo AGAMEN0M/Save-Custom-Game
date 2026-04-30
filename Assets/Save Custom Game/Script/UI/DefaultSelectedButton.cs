@@ -14,13 +14,13 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine;
 
-[AddComponentMenu("UI/Save Custom Game/Default Selected Button")]
+[AddComponentMenu("Tools/Save Custom Game/UI/Default Selected Button")]
 public class DefaultSelectedButton : MonoBehaviour
 {
     #region === Serialized Fields ===
 
     [SerializeField, Tooltip("Reference to the button that should be selected when this GameObject is enabled.")]
-    private Button button; // Reference to the button we want to select by default.
+    private Button button;
 
     #endregion
 

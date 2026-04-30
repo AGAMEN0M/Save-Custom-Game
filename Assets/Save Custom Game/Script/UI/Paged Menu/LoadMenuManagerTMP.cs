@@ -13,7 +13,7 @@ using System.IO;
 
 namespace SaveCustomGame.PagedMenu
 {
-    [AddComponentMenu("UI/Save Custom Game/Paged Menu/Load Menu Manager (TMP)")]
+    [AddComponentMenu("Tools/Save Custom Game/UI/Paged Menu/Load Menu Manager (TMP)")]
     public class LoadMenuManagerTMP : PagedMenuBaseTMP
     {
         #region === Unity Events ===

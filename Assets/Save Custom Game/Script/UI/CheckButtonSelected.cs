@@ -15,13 +15,13 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine;
 
-[AddComponentMenu("UI/Save Custom Game/Check Button Selected")]
+[AddComponentMenu("Tools/Save Custom Game/UI/Check Button Selected")]
 public class CheckButtonSelected : MonoBehaviour
 {
     #region === Serialized Fields ===
 
     [SerializeField, Tooltip("Reference to the default button that will be selected if the UI loses focus.")]
-    private Button defaultButton; // Reference to the default button to select when no UI element is selected.
+    private Button defaultButton;
 
     #endregion
 

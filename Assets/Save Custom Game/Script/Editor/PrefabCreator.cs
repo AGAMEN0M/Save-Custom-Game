@@ -18,7 +18,7 @@ using System;
 
 using Object = UnityEngine.Object;
 
-namespace SaveCustomGame
+namespace SaveCustomGame.Editor
 {
     /// <summary>
     /// Provides methods and menu options for instantiating Save Custom UI prefabs into the scene.
@@ -28,40 +28,53 @@ namespace SaveCustomGame
         #region === Canvas And Prefab Creation ===
 
         /// <summary>
-        /// Creates a new UI Canvas with EventSystem if none exists in the scene.
+        /// Creates a new UI Canvas configured for Screen Space Overlay.
+        /// Also ensures that an EventSystem exists in the scene.
         /// </summary>
+        /// <returns>Returns the created Canvas component.</returns>
         private static Canvas CreateUICanvas()
         {
             // Create the Canvas root object.
             GameObject canvasGO = new("Canvas");
 
-            // Add UI components required for rendering UI elements.
+            // Add required UI components.
             var canvas = canvasGO.AddComponent<Canvas>();
             canvasGO.AddComponent<CanvasScaler>();
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // Configure the Canvas for overlay rendering; ensures UI always appears on screen.
+            // Configure Canvas for overlay rendering.
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.gameObject.layer = LayerMask.NameToLayer("UI");
             canvas.sortingOrder = 0;
             canvas.targetDisplay = 0;
 
-            // Create EventSystem if one is not present in the scene to handle UI interactions.
-            GameObject eventSystemGO = new("EventSystem");
-            eventSystemGO.AddComponent<EventSystem>();
-            eventSystemGO.AddComponent<StandaloneInputModule>();
+            // Ensure an EventSystem exists in the scene (avoid duplicates).
+            var existingEventSystem = Object.FindAnyObjectByType<EventSystem>();
 
-            // Register objects for Undo support inside Unity Editor.
+            if (existingEventSystem == null)
+            {
+                // Create EventSystem only if none exists.
+                GameObject eventSystemGO = new("EventSystem");
+
+                eventSystemGO.AddComponent<EventSystem>();
+                eventSystemGO.AddComponent<StandaloneInputModule>();
+
+                // Register for Undo support.
+                Undo.RegisterCreatedObjectUndo(eventSystemGO, "Create EventSystem");
+            }
+
+            // Register Canvas for Undo support.
             Undo.RegisterCreatedObjectUndo(canvasGO, "Create Canvas");
-            Undo.RegisterCreatedObjectUndo(eventSystemGO, "Create EventSystem");
 
-            // Return the created Canvas object.
             return canvas;
         }
 
         /// <summary>
-        /// Searches the project's AssetDatabase for a prefab by name inside the Save Custom Game folder.
+        /// Searches the Unity AssetDatabase for a prefab with the specified name
+        /// inside the "Save Custom Game/Prefab" folder.
         /// </summary>
+        /// <param name="prefabName">The exact name of the prefab file (without extension).</param>
+        /// <returns>Returns the matching prefab GameObject if found; otherwise null.</returns>
         private static GameObject FindPrefabByName(string prefabName)
         {
             // Retrieve all asset GUIDs that match the prefab type and name.
@@ -93,11 +106,8 @@ namespace SaveCustomGame
         private static void CreateAndConfigurePrefab(string fileName, GameObject selectedGameObject)
         {
             // Attempt to locate an existing Canvas; if not found, create a new one.
-            #pragma warning disable IDE0079
-            #pragma warning disable UNT0007
-            var canvas = Object.FindAnyObjectByType<Canvas>() ?? CreateUICanvas();
-            #pragma warning restore UNT0007
-            #pragma warning restore IDE0079
+            var canvas = Object.FindAnyObjectByType<Canvas>();
+            if (canvas == null) canvas = CreateUICanvas();
 
             // Attempt to load the specified prefab.
             var prefab = FindPrefabByName(fileName);
@@ -153,24 +163,32 @@ namespace SaveCustomGame
 
         #region === Legacy UI Prefabs ===
 
-        /// <summary>Creates the Legacy Load Menu UI prefab.</summary>
-        [MenuItem("GameObject/UI/Save Custom Game/Legacy/Load Menu", false, 1)]
+        /// <summary>
+        /// Creates the Legacy Load Menu UI prefab.
+        /// </summary>
+        [MenuItem("GameObject/Tools/Save Custom Game/UI/Legacy/Load Menu")]
         public static void CreateLoadMenuPrefab() => CreateAndConfigurePrefab("Load Menu (Legacy)", Selection.activeGameObject);
 
-        /// <summary>Creates the Legacy Save Menu UI prefab.</summary>
-        [MenuItem("GameObject/UI/Save Custom Game/Legacy/Save Menu", false, 2)]
+        /// <summary>
+        /// Creates the Legacy Save Menu UI prefab.
+        /// </summary>
+        [MenuItem("GameObject/Tools/Save Custom Game/UI/Legacy/Save Menu")]
         public static void CreateSaveMenuPrefab() => CreateAndConfigurePrefab("Save Menu (Legacy)", Selection.activeGameObject);
 
         #endregion
 
         #region === TMP UI Prefabs ===
 
-        /// <summary>Creates the TMP Load Menu UI prefab.</summary>
-        [MenuItem("GameObject/UI/Save Custom Game/Load Menu (TMP)", false, 1)]
+        /// <summary>
+        /// Creates the TMP Load Menu UI prefab.
+        /// </summary>
+        [MenuItem("GameObject/Tools/Save Custom Game/UI/Load Menu (TMP)")]
         public static void CreateLoadMenuPrefabTMP() => CreateAndConfigurePrefab("Load Menu (TMP)", Selection.activeGameObject);
 
-        /// <summary>Creates the TMP Save Menu UI prefab.</summary>
-        [MenuItem("GameObject/UI/Save Custom Game/Save Menu (TMP)", false, 2)]
+        /// <summary>
+        /// Creates the TMP Save Menu UI prefab.
+        /// </summary>
+        [MenuItem("GameObject/Tools/Save Custom Game/UI/Save Menu (TMP)")]
         public static void CreateSaveMenuPrefabTMP() => CreateAndConfigurePrefab("Save Menu (TMP)", Selection.activeGameObject);
 
         #endregion

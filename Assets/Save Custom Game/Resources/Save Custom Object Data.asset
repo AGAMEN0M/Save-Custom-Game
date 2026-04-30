@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: Save Custom Object Data
   m_EditorClassIdentifier: Assembly-CSharp::SaveCustomGame.SaveCustomObject
   screenshot: 
-  pixelLimit: 1000
+  pixelLimit: 500
   gameTime: 00:00:00
   sceneNames: []
   autosaveEnabled: 0
   saveGameByEvent: 0
   saveGameByTime: 0
   saveInterval: 60
-  gameData: 0
+  gameData: 1
   localLow: 0
   playerPrefs: 0
   saveCustomItems: []

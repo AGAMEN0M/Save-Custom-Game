@@ -15,14 +15,14 @@ using UnityEngine;
 
 namespace SaveCustomGame
 {
-    [AddComponentMenu("UI/Save Custom Game/In Background/Auto Save Custom")]
+    [AddComponentMenu("Tools/Save Custom Game/In Background/Auto Save Custom")]
     public class AutoSaveCustom : MonoBehaviour
     {
         #region === Serialized Fields ===
 
         [Header("Auto Save Settings")]
         [Tooltip("Reference to the SaveCustomInScene component responsible for handling save operations.")]
-        public SaveCustomInScene saveCustomInScene; // Reference to SaveCustomInScene component.
+        public SaveCustomInScene saveCustomInScene;
 
         #endregion
 
@@ -56,10 +56,7 @@ namespace SaveCustomGame
             saveInterval = saveCustomInScene.saveCustomObject.saveInterval;
 
             // If a previously used autosave slot is stored, retrieve it.
-            if (PlayerPrefs.HasKey(saveKey))
-            {
-                currentAutoSaveSlot = PlayerPrefs.GetInt(saveKey);
-            }
+            if (PlayerPrefs.HasKey(saveKey)) currentAutoSaveSlot = PlayerPrefs.GetInt(saveKey);
         }
 
         /// <summary>
@@ -76,10 +73,7 @@ namespace SaveCustomGame
                 timeSinceLastSave = 0f; // Reset timer.
 
                 // Only trigger autosave if saving is not being controlled by events.
-                if (saveCustomInScene.saveCustomObject.saveGameByEvent == false)
-                {
-                    SaveAutoGame();
-                }
+                if (saveCustomInScene.saveCustomObject.saveGameByEvent == false) SaveAutoGame();
             }
         }
 
@@ -93,20 +87,11 @@ namespace SaveCustomGame
         /// </summary>
         public void SaveAutoGame()
         {
-            // Abort if autosave is disabled.
-            if (!saveCustomInScene.saveCustomObject.autosaveEnabled) return;
-
-            // Construct autosave filename using the current autosave slot index.
-            saveCustomInScene.fileName = $"0 - {currentAutoSaveSlot}";
-
-            // Perform save using SaveCustomInScene's save handler.
-            saveCustomInScene.SaveData();
-
-            // Rotate autosave slot in a cyclic range (1 through 6).
-            currentAutoSaveSlot = (currentAutoSaveSlot % 6) + 1;
-
-            // Store the updated autosave slot index in PlayerPrefs.
-            PlayerPrefs.SetInt(saveKey, currentAutoSaveSlot);
+            if (!saveCustomInScene.saveCustomObject.autosaveEnabled) return; // Abort if autosave is disabled.
+            saveCustomInScene.fileName = $"0 - {currentAutoSaveSlot}"; // Construct autosave filename using the current autosave slot index.
+            saveCustomInScene.SaveData(); // Perform save using SaveCustomInScene's save handler.
+            currentAutoSaveSlot = (currentAutoSaveSlot % 6) + 1; // Rotate autosave slot in a cyclic range (1 through 6).
+            PlayerPrefs.SetInt(saveKey, currentAutoSaveSlot); // Store the updated autosave slot index in PlayerPrefs.
         }
 
         #endregion

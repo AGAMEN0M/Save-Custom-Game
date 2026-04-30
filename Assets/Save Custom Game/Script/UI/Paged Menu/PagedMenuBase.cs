@@ -18,12 +18,21 @@ using static SaveCustomGame.SaveDataUtility;
 
 namespace SaveCustomGame.PagedMenu
 {
+    /// <summary>
+    /// Base class that manages paginated UI for save/load menus.
+    /// Handles navigation, slot rendering, confirmation workflow, and memory cleanup.
+    /// Child classes must implement slot behavior and data loading.
+    /// </summary>
     public abstract class PagedMenuBase : MonoBehaviour
     {
         #region === Struct ===
 
+        /// <summary>
+        /// Represents a single save slot UI, including button interaction,
+        /// preview image, label, and associated file path.
+        /// </summary>
         [Serializable]
-        public struct SlotUI
+        public class SlotUI
         {
             [Tooltip("Button that triggers action on this slot.")]
             public Button button;
@@ -84,10 +93,10 @@ namespace SaveCustomGame.PagedMenu
 
         #region === Private / Protected Fields ===
 
-        protected SaveCustomInScene saveCustomInScene;
-        protected int currentNumber = 0;
-        protected bool initializedUI = false;
-        protected readonly string prefsKeyBase = "PagedMenu_Key";
+        protected SaveCustomInScene saveCustomInScene; //
+        protected int currentNumber = 0; //
+        protected bool initializedUI = false; //
+        protected readonly string prefsKeyBase = "PagedMenu_Key"; //
 
         #endregion
 

@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 
-namespace SaveCustomGame
+namespace SaveCustomGame.Editor
 {
     /// <summary>
     /// Provides methods to create base C# script files for Save Custom Game functionality.
@@ -76,7 +76,7 @@ namespace SaveCustomGame
         /// <summary>
         /// Creates a new base script for the Game Save Manager.
         /// </summary>
-        [MenuItem("Assets/Create/Save Custom Game/Game Save Manager (Script)", false, 2)]
+        [MenuItem("Assets/Create/Tools/Save Custom Game/Game Save Manager (Script)")]
         public static void CreateSaveManager()
         {
             #region === Code ===
@@ -272,7 +272,7 @@ public static class GameSaveManager
         /// <summary>
         /// Creates a new base script for the Game Load Manager.
         /// </summary>
-        [MenuItem("Assets/Create/Save Custom Game/Game Load Manager (Script)", false, 3)]
+        [MenuItem("Assets/Create/Tools/Save Custom Game/Game Load Manager (Script)")]
         public static void CreateLoadManager()
         {
             #region === Code ===

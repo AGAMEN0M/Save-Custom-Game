@@ -1,12 +1,15 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: Central utility class for managing data stored in SaveCustomObject.
- *              Provides unified access for reading and modifying float, int, string,
- *              bool, and vector values; capturing and restoring screenshots; converting
- *              textures to sprites; locating scene save components; controlling
- *              auto-save behavior; and triggering save events. Ensures safe access,
- *              automatic container creation when needed, and consistent logging for
- *              debugging across the save system.
+ * Description: Centralized utility for managing SaveCustomObject data.
+ *              Provides cached access for reading and writing primitive types
+ *              (float, int, string, bool) and vector-based data (Vector4).
+ *              Includes safe retrieval with fallback defaults and debug logging,
+ *              automatic data structure creation, scene component caching,
+ *              save control utilities, screenshot capture/restore pipeline,
+ *              and conversion helpers (e.g., Vector4 to Quaternion).
+ *              
+ *              Designed for performance, safety, and debuggability across
+ *              the entire save system.
  *              
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
@@ -24,407 +27,528 @@ namespace SaveCustomGame
 {
     public static class SaveDataUtility
     {
-        #region === Get Save Object ===
-
-        private static SaveCustomObject saveCustomObject; // Internal static reference to the loaded SaveCustomObject instance.
+        #region === Cached References ===
 
         /// <summary>
-        /// Retrieves the SaveCustomObject instance used to store all custom saved data.
-        /// Automatically loads it from the Resources folder if it has not been loaded yet.
-        /// Logs an error if the asset cannot be found, ensuring visibility of missing data issues.
+        /// Cached reference to the loaded SaveCustomObject.
         /// </summary>
-        /// <returns>
-        /// The loaded SaveCustomObject instance, or null if the resource cannot be located.
-        /// </returns>
+        private static SaveCustomObject saveCustomObject;
+
+        /// <summary>
+        /// Cached reference to the SaveCustomInScene component.
+        /// </summary>
+        private static SaveCustomInScene cachedSceneComponent;
+
+        /// <summary>
+        /// Cache for fast item lookup using itemTag as key.
+        /// </summary>
+        private static readonly Dictionary<string, SaveCustomItem> itemCache = new();
+
+        #endregion
+
+        #region === Debug Control ===
+
+        /// <summary>
+        /// Stores already logged missing keys to prevent log spam.
+        /// </summary>
+        private static readonly HashSet<string> loggedMissingKeys = new();
+
+        /// <summary>
+        /// Logs a warning when a default value is used.
+        /// Ensures each key logs only once.
+        /// </summary>
+        private static void LogDefaultUsage(string itemTag, string tag, Type type)
+        {
+            string key = $"{itemTag}.{tag}.{type.Name}";
+
+            // Prevent duplicate logs.
+            if (loggedMissingKeys.Contains(key)) return;
+
+            loggedMissingKeys.Add(key);
+
+            Debug.LogWarning($"{GetCallingMethodInfo()} - Using default value for missing key: '{itemTag}.{tag}' (Type: {type.Name})");
+        }
+
+        #endregion
+
+        #region === Get Save Object ===
+
+        /// <summary>
+        /// Retrieves and caches the SaveCustomObject from Resources.
+        /// If not already loaded, it will attempt to load and build the internal cache.
+        /// </summary>
+        /// <returns>Returns the cached SaveCustomObject instance, or null if it could not be loaded.</returns>
         public static SaveCustomObject GetSaveCustomObject()
         {
+            // Return cached instance if already loaded.
+            if (saveCustomObject != null) return saveCustomObject;
+
+            // Load the ScriptableObject from Resources folder.
+            saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
+
+            // Validate load result.
             if (saveCustomObject == null)
             {
-                saveCustomObject = Resources.Load<SaveCustomObject>("Save Custom Object Data");
-                if (saveCustomObject == null)
-                {
-                    Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null.");
-                    return null;
-                }
+                Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomObject is null.");
+                return null;
             }
+
+            BuildCache(); // Build lookup cache after successful load.
 
             return saveCustomObject;
         }
 
-        #endregion
-
-        #region === Get Value Methods ===
-
         /// <summary>
-        /// Retrieves a stored Vector4 value associated with the specified itemTag and vectorTag.
-        /// Returns Vector4.zero if the value is not found.
+        /// Builds the dictionary cache for fast item lookup using itemTag as key.
+        /// This avoids repeated linear searches when accessing save data.
         /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="vectorTag">Key identifying the specific Vector4 entry.</param>
-        /// <returns>The stored Vector4 value, or a default value if none exists.</returns>
-        public static Vector4 GetVector(string itemTag, string vectorTag)
+        private static void BuildCache()
         {
-            return FindValue<SaveCustomVector, Vector4>(
-                itemTag, vectorTag,
-                item => item.itemVector, // List selector for Vector4 entries.
-                entry => entry.vectorTag, // Tag selector for finding the specific entry.
-                entry => entry.vectorValue // Value retrieval.
-            );
-        }
+            itemCache.Clear(); // Clear previous cache to avoid stale references.
+            if (saveCustomObject == null) return; // Validate main object.
+            if (saveCustomObject.saveCustomItems == null) return; // Validate item list.
 
-        /// <summary>
-        /// Retrieves a stored float value associated with the specified itemTag and floatTag.
-        /// Returns 0 if the value is not found.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="floatTag">Key identifying the specific float entry.</param>
-        /// <returns>The stored float value, or a default value if none exists.</returns>
-        public static float GetFloat(string itemTag, string floatTag)
-        {
-            return FindValue<SaveCustomFloat, float>(
-                itemTag, floatTag,
-                item => item.itemFloat, // List selector for float entries.
-                entry => entry.floatTag, // Tag selector.
-                entry => entry.floatValue // Value retrieval.
-            );
-        }
-
-        /// <summary>
-        /// Retrieves a stored int value associated with the specified itemTag and intTag.
-        /// Returns 0 if the value is not found.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="intTag">Key identifying the specific int entry.</param>
-        /// <returns>The stored int value, or a default value if none exists.</returns>
-        public static int GetInt(string itemTag, string intTag)
-        {
-            return FindValue<SaveCustomInt, int>(
-                itemTag, intTag,
-                item => item.itemInt, // List selector for int entries.
-                entry => entry.intTag, // Tag selector.
-                entry => entry.intValue // Value retrieval.
-            );
-        }
-
-        /// <summary>
-        /// Retrieves a stored string value associated with the specified itemTag and stringTag.
-        /// Returns an empty string if the value is not found.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="stringTag">Key identifying the specific string entry.</param>
-        /// <returns>The stored string value, or a default value if none exists.</returns>
-        public static string GetString(string itemTag, string stringTag)
-        {
-            return FindValue<SaveCustomString, string>(
-                itemTag, stringTag,
-                item => item.itemString, // List selector for string entries.
-                entry => entry.stringTag, // Tag selector.
-                entry => entry.stringValue // Value retrieval.
-            );
-        }
-
-        /// <summary>
-        /// Retrieves a stored bool value associated with the specified itemTag and boolTag.
-        /// Returns false if the value is not found.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="boolTag">Key identifying the specific bool entry.</param>
-        /// <returns>The stored bool value, or a default value if none exists.</returns>
-        public static bool GetBool(string itemTag, string boolTag)
-        {
-            return FindValue<SaveCustomBool, bool>(
-                itemTag, boolTag,
-                item => item.itemBool, // List selector for bool entries.
-                entry => entry.boolTag, // Tag selector.
-                entry => entry.boolValue // Value retrieval.
-            );
-        }
-
-        #endregion
-
-        #region === Set Value Methods ===
-
-        /// <summary>
-        /// Sets a vector value (Vector2, Vector3, Vector4 or Quaternion) associated with the given tags.
-        /// Automatically converts the input value to a Vector4 before saving.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="vectorTag">Key identifying the specific vector entry.</param>
-        /// <param name="newValue">The new vector-compatible value to store.</param>
-        public static void SetVector(string itemTag, string vectorTag, object newValue)
-        {
-            Vector4 value;
-            bool supported = true;
-
-            // Convert the provided object to a Vector4 based on supported input types.
-            switch (newValue)
+            // Populate dictionary for O(1) access.
+            foreach (var item in saveCustomObject.saveCustomItems)
             {
-                // Convert Vector2 to Vector4.
-                case Vector2 v2:
-                    value = new(v2.x, v2.y, 0f, 0f);
-                    break;
-
-                // Convert Vector3 to Vector4.
-                case Vector3 v3:
-                    value = new(v3.x, v3.y, v3.z, 0f);
-                    break;
-
-                // Already Vector4.
-                case Vector4 v4:
-                    value = v4;
-                    break;
-
-                // Convert Quaternion to Vector4.
-                case Quaternion q:
-                    value = new(q.x, q.y, q.z, q.w);
-                    break;
-
-                // Unsupported type.
-                default:
-                    supported = false;
-                    value = Vector4.zero;
-                    break;
-            };
-
-            // Log error only if type unsupported.
-            if (!supported)
-            {
-                Debug.LogError($"{GetCallingMethodInfo()} - Unsupported value type for SetVector. Received: {newValue.GetType()}");
-                return;
+                // Avoid duplicate keys (safety check).
+                if (!itemCache.ContainsKey(item.itemTag)) itemCache.Add(item.itemTag, item);
             }
-
-            // Forward processed Vector4 to final saving method.
-            SetVector4(itemTag, vectorTag, value);
-        }
-
-        /// <summary>
-        /// Sets a Vector4 value associated with the specified itemTag and vectorTag.
-        /// Creates a new entry if no matching entry exists.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="vectorTag">Key identifying the specific Vector4 entry.</param>
-        /// <param name="newValue">The new Vector4 value to store.</param>
-        public static void SetVector4(string itemTag, string vectorTag, Vector4 newValue)
-        {
-            SetValue<SaveCustomVector, Vector4>(
-                itemTag, vectorTag, newValue,
-                item => item.itemVector, // Get list of vector entries.
-                (item, list) => item.itemVector = list, // Assign list if it was newly created.
-                entry => entry.vectorTag, // Get entry key.
-                (entry, val) => entry.vectorValue = val, // Assign the new value.
-                (tag, val) => new SaveCustomVector { vectorTag = tag, vectorValue = val } // Create entry.
-            );
-        }
-
-        /// <summary>
-        /// Sets a float value associated with the specified itemTag and floatTag.
-        /// Creates a new entry if no matching entry exists.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="floatTag">Key identifying the specific float entry.</param>
-        /// <param name="newValue">The new float value to store.</param>
-        public static void SetFloat(string itemTag, string floatTag, float newValue)
-        {
-            SetValue<SaveCustomFloat, float>(
-                itemTag, floatTag, newValue,
-                item => item.itemFloat,
-                (item, list) => item.itemFloat = list,
-                entry => entry.floatTag,
-                (entry, val) => entry.floatValue = val,
-                (tag, val) => new SaveCustomFloat { floatTag = tag, floatValue = val }
-            );
-        }
-
-        /// <summary>
-        /// Sets an int value associated with the specified itemTag and intTag.
-        /// Creates a new entry if no matching entry exists.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="intTag">Key identifying the specific int entry.</param>
-        /// <param name="newValue">The new int value to store.</param>
-        public static void SetInt(string itemTag, string intTag, int newValue)
-        {
-            SetValue<SaveCustomInt, int>(
-                itemTag, intTag, newValue,
-                item => item.itemInt,
-                (item, list) => item.itemInt = list,
-                entry => entry.intTag,
-                (entry, val) => entry.intValue = val,
-                (tag, val) => new SaveCustomInt { intTag = tag, intValue = val }
-            );
-        }
-
-        /// <summary>
-        /// Sets a string value associated with the specified itemTag and stringTag.
-        /// Creates a new entry if no matching entry exists.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="stringTag">Key identifying the specific string entry.</param>
-        /// <param name="newValue">The new string value to store.</param>
-        public static void SetString(string itemTag, string stringTag, string newValue)
-        {
-            SetValue<SaveCustomString, string>(
-                itemTag, stringTag, newValue,
-                item => item.itemString,
-                (item, list) => item.itemString = list,
-                entry => entry.stringTag,
-                (entry, val) => entry.stringValue = val,
-                (tag, val) => new SaveCustomString { stringTag = tag, stringValue = val }
-            );
-        }
-
-        /// <summary>
-        /// Sets a bool value associated with the specified itemTag and boolTag.
-        /// Creates a new entry if no matching entry exists.
-        /// </summary>
-        /// <param name="itemTag">Identifier grouping related values.</param>
-        /// <param name="boolTag">Key identifying the specific bool entry.</param>
-        /// <param name="newValue">The new bool value to store.</param>
-        public static void SetBool(string itemTag, string boolTag, bool newValue)
-        {
-            SetValue<SaveCustomBool, bool>(
-                itemTag, boolTag, newValue,
-                item => item.itemBool,
-                (item, list) => item.itemBool = list,
-                entry => entry.boolTag,
-                (entry, val) => entry.boolValue = val,
-                (tag, val) => new SaveCustomBool { boolTag = tag, boolValue = val }
-            );
         }
 
         #endregion
 
-        #region === Internal Helper Methods ===
+        #region === Get Methods (Safe) ===
 
         /// <summary>
-        /// Finds and returns a SaveCustomItem that matches the provided itemTag.
-        /// Throws an informative exception if the save object is missing or if
-        /// the specified item does not exist. Ensures reliable data access.
+        /// Retrieves a float value from the save data.
+        /// Returns the stored value if found; otherwise returns default (0f) and logs a warning.
         /// </summary>
-        /// <param name="itemTag">Identifier for the stored group of values.</param>
-        private static SaveCustomItem FindItem(string itemTag)
+        /// <param name="itemTag">The identifier of the save item.</param>
+        /// <param name="tag">The identifier of the value inside the item.</param>
+        /// <returns>The stored float value, or 0f if not found.</returns>
+        public static float GetFloat(string itemTag, string tag)
         {
-            // Retrieve reference to SaveCustomObject.
-            var saveObject = GetSaveCustomObject();
-            if (saveObject == null) throw new KeyNotFoundException($"{GetCallingMethodInfo()} - SaveCustomObject is null.");
+            // Attempt to retrieve value.
+            if (TryGetFloat(itemTag, tag, out var v)) return v;
 
-            // Iterate through all items to find a matching tag.
-            foreach (var item in saveObject.saveCustomItems)
-            {
-                // Check if the tag matches.
-                if (item.itemTag == itemTag) return item;
-            }
-
-            // If execution reaches here, no matching item was found.
-            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Item '{itemTag}' not found.");
+            // Log fallback usage and return default.
+            LogDefaultUsage(itemTag, tag, typeof(float));
+            return default;
         }
 
         /// <summary>
-        /// Retrieves a stored value that matches the provided itemTag and dataTag.
-        /// Used internally by the public GetValue methods to support multiple data types.
-        /// Throws clear exceptions when the item or its data entry cannot be found.
+        /// Retrieves an int value from the save data.
+        /// Returns the stored value if found; otherwise returns default (0) and logs a warning.
         /// </summary>
-        /// <typeparam name="TList">The container type used to store the data (e.g., SaveCustomFloat).</typeparam>
-        /// <typeparam name="T">The actual value type being retrieved (e.g., float).</typeparam>
-        /// <param name="itemTag">Unique tag representing the saved item group.</param>
-        /// <param name="dataTag">Unique tag representing the specific value within the item.</param>
-        /// <param name="selector">Delegate that selects the correct list from the item.</param>
-        /// <param name="comparer">Delegate that retrieves the tag of each stored entry for comparison.</param>
-        /// <param name="valueSelector">Delegate that retrieves the actual stored value.</param>
-        private static T FindValue<TList, T>(
-            string itemTag,
-            string dataTag,
-            Func<SaveCustomItem, List<TList>> selector,
-            Func<TList, string> comparer,
-            Func<TList, T> valueSelector)
+        /// <param name="itemTag">The identifier of the save item.</param>
+        /// <param name="tag">The identifier of the value inside the item.</param>
+        /// <returns>The stored int value, or 0 if not found.</returns>
+        public static int GetInt(string itemTag, string tag)
         {
-            // Find the correct item based on the provided tag.
-            var item = FindItem(itemTag);
+            if (TryGetInt(itemTag, tag, out var v)) return v;
 
-            // Attempt to get the correct list of stored entries.
-            var list = selector(item) ?? throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Data list for '{itemTag}' is null.");
+            LogDefaultUsage(itemTag, tag, typeof(int));
+            return default;
+        }
 
-            // Search for the entry with the matching dataTag.
+        /// <summary>
+        /// Retrieves a string value from the save data.
+        /// Returns the stored value if found; otherwise returns an empty string and logs a warning.
+        /// </summary>
+        /// <param name="itemTag">The identifier of the save item.</param>
+        /// <param name="tag">The identifier of the value inside the item.</param>
+        /// <returns>The stored string value, or an empty string if not found.</returns>
+        public static string GetString(string itemTag, string tag)
+        {
+            if (TryGetString(itemTag, tag, out var v)) return v;
+
+            LogDefaultUsage(itemTag, tag, typeof(string));
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Retrieves a bool value from the save data.
+        /// Returns the stored value if found; otherwise returns false and logs a warning.
+        /// </summary>
+        /// <param name="itemTag">The identifier of the save item.</param>
+        /// <param name="tag">The identifier of the value inside the item.</param>
+        /// <returns>The stored bool value, or false if not found.</returns>
+        public static bool GetBool(string itemTag, string tag)
+        {
+            if (TryGetBool(itemTag, tag, out var v)) return v;
+
+            LogDefaultUsage(itemTag, tag, typeof(bool));
+            return default;
+        }
+
+        /// <summary>
+        /// Retrieves a Vector4 value from the save data.
+        /// Returns the stored value if found; otherwise returns default and logs a warning.
+        /// </summary>
+        /// <param name="itemTag">The identifier of the save item.</param>
+        /// <param name="tag">The identifier of the value inside the item.</param>
+        /// <returns>The stored Vector4 value, or default if not found.</returns>
+        public static Vector4 GetVector(string itemTag, string tag)
+        {
+            if (TryGetVector(itemTag, tag, out var v)) return v;
+
+            LogDefaultUsage(itemTag, tag, typeof(Vector4));
+            return default;
+        }
+
+        #endregion
+
+        #region === TryGet Methods ===
+
+        /// <summary>
+        /// Attempts to retrieve a stored float value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Output value if found.</param>
+        /// <returns>True if found, otherwise false.</returns>
+        public static bool TryGetFloat(string itemTag, string tag, out float value)
+            => TryFind(itemTag, tag, i => i.itemFloat, e => e.floatTag, e => e.floatValue, out value);
+
+        /// <summary>
+        /// Attempts to retrieve a stored int value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Output value if found.</param>
+        /// <returns>True if found, otherwise false.</returns>
+        public static bool TryGetInt(string itemTag, string tag, out int value)
+            => TryFind(itemTag, tag, i => i.itemInt, e => e.intTag, e => e.intValue, out value);
+
+        /// <summary>
+        /// Attempts to retrieve a stored string value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Output value if found.</param>
+        /// <returns>True if found, otherwise false.</returns>
+        public static bool TryGetString(string itemTag, string tag, out string value)
+            => TryFind(itemTag, tag, i => i.itemString, e => e.stringTag, e => e.stringValue, out value);
+
+        /// <summary>
+        /// Attempts to retrieve a stored bool value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Output value if found.</param>
+        /// <returns>True if found, otherwise false.</returns>
+        public static bool TryGetBool(string itemTag, string tag, out bool value)
+            => TryFind(itemTag, tag, i => i.itemBool, e => e.boolTag, e => e.boolValue, out value);
+
+        /// <summary>
+        /// Attempts to retrieve a stored Vector4 value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Output value if found.</param>
+        /// <returns>True if found, otherwise false.</returns>
+        public static bool TryGetVector(string itemTag, string tag, out Vector4 value)
+            => TryFind(itemTag, tag, i => i.itemVector, e => e.vectorTag, e => e.vectorValue, out value);
+
+        #endregion
+
+        #region === Set Methods ===
+
+        /// <summary>
+        /// Sets or creates a float value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Value to store.</param>
+        public static void SetFloat(string itemTag, string tag, float value)
+            => SetValue(itemTag, tag, value, i => i.itemFloat, (i, l) => i.itemFloat = l,
+                e => e.floatTag, (e, v) => e.floatValue = v,
+                (t, v) => new SaveCustomFloat { floatTag = t, floatValue = v });
+
+        /// <summary>
+        /// Sets or creates an int value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Value to store.</param>
+        public static void SetInt(string itemTag, string tag, int value)
+            => SetValue(itemTag, tag, value, i => i.itemInt, (i, l) => i.itemInt = l,
+                e => e.intTag, (e, v) => e.intValue = v,
+                (t, v) => new SaveCustomInt { intTag = t, intValue = v });
+
+        /// <summary>
+        /// Sets or creates a string value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Value to store.</param>
+        public static void SetString(string itemTag, string tag, string value)
+            => SetValue(itemTag, tag, value, i => i.itemString, (i, l) => i.itemString = l,
+                e => e.stringTag, (e, v) => e.stringValue = v,
+                (t, v) => new SaveCustomString { stringTag = t, stringValue = v });
+
+        /// <summary>
+        /// Sets or creates a bool value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Value to store.</param>
+        public static void SetBool(string itemTag, string tag, bool value)
+            => SetValue(itemTag, tag, value, i => i.itemBool, (i, l) => i.itemBool = l,
+                e => e.boolTag, (e, v) => e.boolValue = v,
+                (t, v) => new SaveCustomBool { boolTag = t, boolValue = v });
+
+        /// <summary>
+        /// Sets a Vector2 value (stored as Vector4).
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="v">Value to store.</param>
+        public static void SetVector(string itemTag, string tag, Vector2 v)
+            => SetVector4(itemTag, tag, new Vector4(v.x, v.y));
+
+        /// <summary>
+        /// Sets a Vector3 value (stored as Vector4).
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="v">Value to store.</param>
+        public static void SetVector(string itemTag, string tag, Vector3 v)
+            => SetVector4(itemTag, tag, new Vector4(v.x, v.y, v.z));
+
+        /// <summary>
+        /// Sets a Vector4 value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="v">Value to store.</param>
+        public static void SetVector(string itemTag, string tag, Vector4 v)
+            => SetVector4(itemTag, tag, v);
+
+        /// <summary>
+        /// Sets a Quaternion value (stored as Vector4).
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="q">Value to store.</param>
+        public static void SetVector(string itemTag, string tag, Quaternion q)
+            => SetVector4(itemTag, tag, new Vector4(q.x, q.y, q.z, q.w));
+
+        /// <summary>
+        /// Sets or creates a Vector4 value.
+        /// </summary>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Value to store.</param>
+        public static void SetVector4(string itemTag, string tag, Vector4 value)
+            => SetValue(itemTag, tag, value, i => i.itemVector, (i, l) => i.itemVector = l,
+                e => e.vectorTag, (e, v) => e.vectorValue = v,
+                (t, v) => new SaveCustomVector { vectorTag = t, vectorValue = v });
+
+        #endregion
+
+        #region === Core Logic ===
+
+        /// <summary>
+        /// Attempts to locate and retrieve a stored value from the cache.
+        /// Returns false if the item, list, or entry does not exist.
+        /// </summary>
+        /// <typeparam name="TList">Entry container type.</typeparam>
+        /// <typeparam name="TValue">Stored value type.</typeparam>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="getList">Delegate to access the list.</param>
+        /// <param name="getTag">Delegate to compare entry keys.</param>
+        /// <param name="getValue">Delegate to extract value.</param>
+        /// <param name="value">Output value if found.</param>
+        /// <returns>True if found, otherwise false.</returns>
+        private static bool TryFind<TList, TValue>(string itemTag, string tag, Func<SaveCustomItem, List<TList>> getList, Func<TList, string> getTag, Func<TList, TValue> getValue, out TValue value)
+        {
+            value = default; // Initialize output with default to ensure predictable fallback.
+
+            // Ensure save object is loaded before accessing cache.
+            var save = GetSaveCustomObject();
+            if (save == null) return false;
+
+            // Try to retrieve cached item (O(1) lookup).
+            // If not found, item does not exist in save structure.
+            if (!itemCache.TryGetValue(itemTag, out var item)) return false;
+
+            var list = getList(item); // Retrieve the specific data list (e.g., floats, ints, vectors).
+            if (list == null) return false; // If list is null, this type was never initialized for this item.
+
+            // Iterate through entries to find matching tag.
+            // Note: List is expected to be small, so linear search is acceptable.
             foreach (var entry in list)
             {
-                if (comparer(entry) == dataTag)
+                if (getTag(entry) == tag)
                 {
-                    // Return the found value.
-                    return valueSelector(entry);
+                    // Match found → extract and return value.
+                    value = getValue(entry);
+                    return true;
                 }
             }
 
-            // If no matching data key is found, throw an informative exception.
-            throw new KeyNotFoundException($"{GetCallingMethodInfo()} - Tag '{dataTag}' not found in item '{itemTag}'.");
+            return false; // Entry not found.
         }
 
         /// <summary>
-        /// Inserts or updates a stored value identified by itemTag and dataTag.
-        /// Automatically creates items or entries if they do not yet exist.
-        /// Ensures the SaveCustomObject structure remains valid and synchronized.
+        /// Inserts or updates a value in the save structure.
+        /// Automatically creates missing items or lists when necessary.
+        /// Keeps cache and data synchronized.
         /// </summary>
-        /// <typeparam name="TList">The list entry type (e.g., SaveCustomInt).</typeparam>
-        /// <typeparam name="TValue">The value type to store (e.g., int).</typeparam>
-        /// <param name="itemTag">Unique tag identifying the group of stored values.</param>
-        /// <param name="dataTag">Unique tag identifying the specific value within the group.</param>
-        /// <param name="newValue">The new value to assign.</param>
-        /// <param name="getList">Delegate to get the corresponding list from the item.</param>
-        /// <param name="setList">Delegate to assign a new list back to the item when required.</param>
-        /// <param name="getTag">Delegate to retrieve the tag of each entry for comparison.</param>
-        /// <param name="setValue">Delegate to assign the stored value to an existing entry.</param>
-        /// <param name="createEntry">Delegate that creates a new entry if one does not yet exist.</param>
-        private static void SetValue<TList, TValue>(
-            string itemTag,
-            string dataTag,
-            TValue newValue,
-            Func<SaveCustomItem, List<TList>> getList,
-            Action<SaveCustomItem, List<TList>> setList,
-            Func<TList, string> getTag,
-            Action<TList, TValue> setValue,
-            Func<string, TValue, TList> createEntry)
+        /// <typeparam name="TList">Entry container type.</typeparam>
+        /// <typeparam name="TValue">Stored value type.</typeparam>
+        /// <param name="itemTag">Item identifier.</param>
+        /// <param name="tag">Entry identifier.</param>
+        /// <param name="value">Value to store.</param>
+        /// <param name="getList">Delegate to retrieve list.</param>
+        /// <param name="setList">Delegate to assign list.</param>
+        /// <param name="getTag">Delegate to compare keys.</param>
+        /// <param name="setValue">Delegate to assign value.</param>
+        /// <param name="create">Delegate to create new entry.</param>
+        private static void SetValue<TList, TValue>(string itemTag, string tag, TValue value, Func<SaveCustomItem, List<TList>> getList, Action<SaveCustomItem, List<TList>> setList, Func<TList, string> getTag, Action<TList, TValue> setValue, Func<string, TValue, TList> create)
         {
-            // Retrieve reference to SaveCustomObject.
-            var saveObject = GetSaveCustomObject();
-            if (saveObject == null) return;
+            // Ensure save object is available.
+            var save = GetSaveCustomObject();
+            if (save == null) return;
 
-            // Ensure saveCustomItems list exists.
-            saveObject.saveCustomItems ??= new List<SaveCustomItem>();
+            // Ensure root list exists.
+            save.saveCustomItems ??= new List<SaveCustomItem>();
 
-            // Search for an existing item that matches itemTag.
-            foreach (var item in saveObject.saveCustomItems)
+            // Try to get existing item from cache.
+            if (!itemCache.TryGetValue(itemTag, out var item))
             {
-                if (item.itemTag == itemTag)
+                // Item does not exist → create and register it.
+                item = new SaveCustomItem { itemTag = itemTag };
+
+                // Add to both data structure and cache for consistency.
+                save.saveCustomItems.Add(item);
+                itemCache[itemTag] = item;
+            }
+
+            // Retrieve the list for this specific type (float, int, etc.).
+            var list = getList(item);
+
+            // If list is missing, initialize it.
+            if (list == null)
+            {
+                list = new List<TList>();
+                setList(item, list);
+            }
+
+            // Try to find existing entry with the same tag.
+            foreach (var entry in list)
+            {
+                if (getTag(entry) == tag)
                 {
-                    // Attempt to retrieve the entry list for this item.
-                    var list = getList(item);
-                    if (list == null)
-                    {
-                        list = new List<TList>();
-                        setList(item, list); // Assign the newly created list.
-                    }
-
-                    // Search for an existing entry that matches dataTag.
-                    foreach (var entry in list)
-                    {
-                        if (getTag(entry) == dataTag)
-                        {
-                            // Update existing value and exit.
-                            setValue(entry, newValue);
-                            return;
-                        }
-                    }
-
-                    // If the tag was not found, append a new entry.
-                    list.Add(createEntry(dataTag, newValue));
+                    // Entry exists → update value in-place.
+                    setValue(entry, value);
                     return;
                 }
             }
 
-            // If the item did not exist, create it and assign a new populated list.
-            var newItem = new SaveCustomItem { itemTag = itemTag };
-            var newList = new List<TList> { createEntry(dataTag, newValue) };
-            setList(newItem, newList);
-            saveObject.saveCustomItems.Add(newItem);
+            list.Add(create(tag, value)); // Entry does not exist → create and append new one.
+        }
+
+        #endregion
+
+        #region === Scene Access (Cached) ===
+
+        /// <summary>
+        /// Retrieves and caches the SaveCustomInScene component from the scene.
+        /// Avoids repeated GameObject.Find calls.
+        /// </summary>
+        /// <returns>Cached component or null if not found.</returns>
+        public static SaveCustomInScene GetComponentSaveCustomInScene()
+        {
+            // Return cached reference if already resolved.
+            // This avoids expensive scene searches on subsequent calls.
+            if (cachedSceneComponent != null) return cachedSceneComponent;
+
+            // Attempt to locate the main Save Custom Object in the scene.
+            // This uses GameObject.Find, so it should only happen once.
+            var obj = GameObject.Find("[Save Custom Object]");
+
+            // Validate that the object exists.
+            if (obj == null)
+            {
+                Debug.LogError($"{GetCallingMethodInfo()} - Object not found.");
+                return null;
+            }
+
+            // Try to retrieve the required component and cache it.
+            // If successful, future calls will skip all lookup logic.
+            if (obj.TryGetComponent(out cachedSceneComponent)) return cachedSceneComponent;
+
+            // If the component is missing, log a clear error for debugging.
+            Debug.LogError($"{GetCallingMethodInfo()} - Component missing.");
+            return null;
+        }
+
+        #endregion
+
+        #region === Save Control ===
+
+        /// <summary>
+        /// Enables or disables the auto-save system.
+        /// </summary>
+        /// <param name="state">True to enable, false to disable.</param>
+        public static void SetAutoSave(bool state)
+        {
+            var save = GetSaveCustomObject();
+            if (save == null) return;
+
+            save.autosaveEnabled = state;
+        }
+
+        /// <summary>
+        /// Triggers the auto-save process through the AutoSaveCustom component.
+        /// </summary>
+        public static void SaveEvent()
+        {
+            var comp = GetComponentSaveCustomInScene();
+            if (comp == null) return;
+
+            if (comp.TryGetComponent(out AutoSaveCustom auto)) auto.SaveAutoGame();
+        }
+
+        #endregion
+        
+        #region === Vector Conversion ===
+
+        /// <summary>
+        /// Converts a Vector4 into a normalized Quaternion.
+        /// Ensures the quaternion remains valid even if data is corrupted.
+        /// </summary>
+        /// <param name="vector">The Vector4 representing quaternion data.</param>
+        /// <returns>Returns a normalized Quaternion.</returns>
+        public static Quaternion Vector4ToQuaternion(Vector4 vector)
+        {
+            // Create quaternion from vector.
+            Quaternion q = new(vector.x, vector.y, vector.z, vector.w);
+
+            // Normalize to avoid invalid rotations.
+            float magnitude = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+
+            // Avoid division by zero.
+            if (magnitude > 0f)
+            {
+                float inv = 1f / magnitude;
+                q.x *= inv;
+                q.y *= inv;
+                q.z *= inv;
+                q.w *= inv;
+            }
+            else
+            {
+                // Fallback to identity if corrupted.
+                q = Quaternion.identity;
+                Debug.LogWarning($"{GetCallingMethodInfo()} - Invalid quaternion data. Using identity.");
+            }
+
+            return q;
         }
 
         #endregion
@@ -433,30 +557,30 @@ namespace SaveCustomGame
 
         /// <summary>
         /// Captures a screenshot from the specified camera and stores it inside the SaveCustomObject.
-        /// The resolution is automatically adjusted according to the configured pixel limit to prevent oversized textures.
+        /// Ensures proper restoration of render states and avoids memory leaks.
         /// </summary>
         /// <param name="targetCamera">The camera used to render and capture the screenshot.</param>
         public static void CaptureScreenshot(Camera targetCamera)
         {
-            // Retrieves the current SaveCustomObject instance. Returns if not found.
+            // Retrieve save object.
             var saveObject = GetSaveCustomObject();
             if (saveObject == null) return;
 
-            // Validates that the camera used to capture the screenshot is not null.
+            // Validate camera.
             if (targetCamera == null)
             {
                 Debug.LogError($"{GetCallingMethodInfo()} - Camera is null.");
                 return;
             }
 
-            // Gets the current screen resolution.
+            // Get screen size.
             int width = Screen.width;
             int height = Screen.height;
 
-            // Calculates aspect ratio for maintaining proportional scaling.
+            // Calculate aspect ratio.
             float aspect = (float)width / height;
 
-            // Adjusts resolution to ensure it does not exceed the allowed pixel limit.
+            // Clamp resolution to pixel limit.
             if (width > height)
             {
                 width = Mathf.Min(width, saveObject.pixelLimit);
@@ -468,142 +592,93 @@ namespace SaveCustomGame
                 width = Mathf.RoundToInt(height * aspect);
             }
 
-            // Creates a temporary RenderTexture to capture the camera output.
-            RenderTexture rt = new(width, height, 24);
-            targetCamera.targetTexture = rt;
-            targetCamera.Render(); // Renders the camera view into the RenderTexture.
+            // Store previous states (IMPORTANT).
+            RenderTexture previousRT = RenderTexture.active;
+            RenderTexture previousCameraRT = targetCamera.targetTexture;
 
-            // Creates a Texture2D to store the final screenshot image.
-            Texture2D screenshot = new(rt.width, rt.height, TextureFormat.RGB24, false);
-            RenderTexture.active = rt; // Sets the active texture to read from.
+            RenderTexture rt = null;
+            Texture2D screenshot = null;
 
-            // Reads the rendered pixels into the Texture2D.
-            screenshot.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-            screenshot.Apply(); // Finalizes texture data in memory.
+            try
+            {
+                // Create render texture.
+                rt = new RenderTexture(width, height, 24);
 
-            // Resets texture states.
-            RenderTexture.active = null;
-            targetCamera.targetTexture = null;
+                targetCamera.targetTexture = rt;
+                targetCamera.Render();
 
-            // Converts the screenshot to a PNG byte array for saving.
-            saveObject.screenshot = screenshot.EncodeToPNG();
+                // Create texture.
+                screenshot = new Texture2D(width, height, TextureFormat.RGB24, false);
 
-            // Cleans up temporary objects to avoid memory leaks.
-            Object.Destroy(rt);
-            Object.Destroy(screenshot);
+                RenderTexture.active = rt;
+
+                // Read pixels.
+                screenshot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                screenshot.Apply();
+
+                // Encode to PNG.
+                saveObject.screenshot = screenshot.EncodeToPNG();
+            }
+            finally
+            {
+                // Restore previous states.
+                RenderTexture.active = previousRT;
+                targetCamera.targetTexture = previousCameraRT;
+
+                // Cleanup.
+                if (rt != null) Object.Destroy(rt);
+                if (screenshot != null) Object.Destroy(screenshot);
+            }
         }
 
         /// <summary>
         /// Converts a stored PNG screenshot byte array back into a Texture2D.
+        /// Uses non-readable texture to reduce memory usage.
         /// </summary>
         /// <param name="screenshot">The byte array representing the saved screenshot.</param>
         /// <returns>Returns a Texture2D reconstructed from the stored screenshot data, or null if invalid.</returns>
         public static Texture2D RenderScreenshot(byte[] screenshot)
         {
-            // Validates screenshot data.
-            if (screenshot == null)
+            if (screenshot == null || screenshot.Length == 0)
             {
-                Debug.LogError($"{GetCallingMethodInfo()} - Screenshot data is null.");
+                Debug.LogError($"{GetCallingMethodInfo()} - Screenshot data is null or empty.");
                 return null;
             }
 
-            // Creates a minimal texture and loads the screenshot data into it.
-            Texture2D texture = new(1, 1);
-            texture.LoadImage(screenshot); // Automatically resizes texture to match the data.
+            // Create minimal texture.
+            Texture2D texture = new(2, 2, TextureFormat.RGB24, false);
+
+            // Load image and mark as non-readable to save memory.
+            if (!texture.LoadImage(screenshot, markNonReadable: true))
+            {
+                Debug.LogError($"{GetCallingMethodInfo()} - Failed to load screenshot.");
+                Object.Destroy(texture);
+                return null;
+            }
+
             return texture;
         }
 
         /// <summary>
         /// Converts a Texture2D into a Unity Sprite.
-        /// Useful for displaying saved screenshots in UI components.
         /// </summary>
         /// <param name="texture">The texture that will be converted into a sprite.</param>
         /// <returns>Returns a Sprite created from the provided texture, or null if invalid.</returns>
         public static Sprite TextureToSprite(Texture2D texture)
         {
-            // Validates the input texture.
             if (texture == null)
             {
                 Debug.LogError($"{GetCallingMethodInfo()} - Texture is null.");
                 return null;
             }
 
-            // Creates the sprite using the full size of the texture.
+            // Create sprite.
             return Sprite.Create(
                 texture,
-                new Rect(0, 0, texture.width, texture.height), // Defines the visible region of the sprite.
-                new Vector2(0.5f, 0.5f) // Defines pivot at the center.
+                new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f),
+                100f // Pixels per unit (default safe value).
             );
-        }
-
-        #endregion
-
-        #region === Scene Component & Auto-Save ===
-
-        /// <summary>
-        /// Attempts to locate the GameObject named "[Save Custom Object]" in the scene and retrieve its
-        /// SaveCustomInScene component. This component is responsible for managing in-scene data related to saving.
-        /// </summary>
-        /// <returns>
-        /// Returns the SaveCustomInScene component if found. If the object or component is missing, logs an error and returns null.
-        /// </returns>
-        public static SaveCustomInScene GetComponentSaveCustomInScene()
-        {
-            // Attempts to find the main Save Custom Object in the scene.
-            var obj = GameObject.Find("[Save Custom Object]");
-
-            // Validates that the object exists in the scene.
-            if (obj == null)
-            {
-                Debug.LogError($"{GetCallingMethodInfo()} - [Save Custom Object] not found.");
-                return null;
-            }
-
-            // Attempts to retrieve the SaveCustomInScene component from the found object.
-            if (obj.TryGetComponent(out SaveCustomInScene component))
-            {
-                return component;
-            }
-
-            // Logs an error if the expected component is missing.
-            Debug.LogError($"{GetCallingMethodInfo()} - SaveCustomInScene component missing.");
-            return null;
-        }
-
-        /// <summary>
-        /// Enables or disables automatic saving functionality based on the provided state.
-        /// </summary>
-        /// <param name="state">Determines whether auto-save should be enabled (true) or disabled (false).</param>
-        public static void SetAutoSave(bool state)
-        {
-            // Retrieves the SaveCustomObject instance. Returns if not found.
-            var saveObject = GetSaveCustomObject();
-            if (saveObject == null) return;
-
-            // Sets autosave state.
-            saveObject.autosaveEnabled = state;
-        }
-
-        /// <summary>
-        /// Triggers the auto-save process if the AutoSaveCustom component is found on the Save Custom Object.
-        /// </summary>
-        public static void SaveEvent()
-        {
-            // Attempts to find the Save Custom Object in the scene.
-            var obj = GameObject.Find("[Save Custom Object]");
-
-            // Validates object presence before attempting to save.
-            if (obj == null)
-            {
-                Debug.LogError($"{GetCallingMethodInfo()} - Cannot run SaveEvent. Object not found.");
-                return;
-            }
-
-            // Attempts to retrieve and execute the auto-save system.
-            if (obj.TryGetComponent(out AutoSaveCustom autoSave))
-            {
-                autoSave.SaveAutoGame();
-            }
         }
 
         #endregion

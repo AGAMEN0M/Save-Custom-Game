@@ -1,9 +1,10 @@
 /*
  * ---------------------------------------------------------------------------
- * Description: Handles runtime auto-save control and toggling of GameObjects 
- *              for testing and debugging purposes. Provides feedback in the 
- *              console when actions occur. Allows testing of save functionality, 
- *              auto-save toggle, and dynamic activation of objects in-game. 
+ * Description: Handles runtime auto-save control and testing utilities.
+ *              Designed to be triggered via UI buttons or external systems,
+ *              removing dependency on keyboard input. Provides methods for
+ *              enabling/disabling auto-save, triggering saves, and toggling
+ *              GameObjects for debugging and testing purposes.
  *              
  * Author: Lucas Gomes Cecchini
  * Pseudonym: AGAMENOM
@@ -14,96 +15,98 @@ using UnityEngine;
 
 using static SaveCustomGame.SaveDataUtility;
 
-[AddComponentMenu("UI/Save Custom Game/In Background/Test Save Custom")]
-public class TestSaveCustom : MonoBehaviour
+namespace SaveCustomGame
 {
-    #region === Inspector Fields ===
-
-    [Header("Key Settings")]
-    [SerializeField, Tooltip("Key to activate auto-save and trigger a save event.")]
-    private KeyCode activateAndSave = KeyCode.Space;
-
-    [SerializeField, Tooltip("Key to disable auto-save.")]
-    private KeyCode disable = KeyCode.Escape;
-
-    [Header("Test Objects")]
-    [SerializeField, Tooltip("Array of GameObjects to toggle active state for testing.")]
-    private GameObject[] gameObjects;
-
-    [Header("Optional Save Slot")]
-    [SerializeField, Tooltip("Optional: Specific save slot to test saving.")]
-    private int testSaveSlot = 1;
-
-    #endregion
-
-    #region === Unity Events ===
-
-    private void Update() => HandleInput();
-
-    #endregion
-
-    #region === Input Handling ===
-
-    /// <summary>
-    /// Checks for key presses to activate, save, or disable auto-save.
-    /// </summary>
-    private void HandleInput()
+    [AddComponentMenu("Tools/Save Custom Game/In Background/Test Save Custom")]
+    public class TestSaveCustom : MonoBehaviour
     {
-        if (Input.GetKeyDown(activateAndSave))
+        #region === Inspector Fields ===
+
+        [Header("Test Objects")]
+        [SerializeField, Tooltip("Array of GameObjects to toggle active state for testing.")]
+        private GameObject[] gameObjects;
+
+        [Header("Optional Save Slot")]
+        [SerializeField, Tooltip("Optional: Specific save slot to test saving.")]
+        private int testSaveSlot = 1;
+
+        #endregion
+
+        #region === Public Methods (UI / Events) ===
+
+        /// <summary>
+        /// Enables auto-save and immediately triggers a save operation.
+        /// Intended to be called from UI buttons or external systems.
+        /// </summary>
+        public void ActivateAndSave()
         {
-            // Enable auto-save and trigger save event.
             SetAutoSave(true);
             SaveTestSlot();
         }
 
-        if (Input.GetKeyDown(disable))
+        /// <summary>
+        /// Disables the auto-save system.
+        /// Intended to be called from UI buttons or external systems.
+        /// </summary>
+        public void DisableAutoSave()
         {
-            // Disable auto-save.
             SetAutoSave(false);
-            Debug.Log("[TestSaveCustom] Auto-save disabled.", this);
+            Debug.Log($"[{nameof(TestSaveCustom)}] Auto-save disabled.", this);
         }
-    }
 
-    #endregion
+        /// <summary>
+        /// Triggers a save operation manually.
+        /// Uses the optional test slot if defined.
+        /// </summary>
+        public void TriggerSave() => SaveTestSlot();
 
-    #region === Save Testing ===
+        #endregion
 
-    /// <summary>
-    /// Performs a save event and provides console feedback.
-    /// Saves in the optional test slot if assigned.
-    /// </summary>
-    private void SaveTestSlot()
-    {
-        if (testSaveSlot > 0)
-        {
-            SaveEvent(); // Trigger save event, could be modified to specify slot in future.
-            Debug.Log($"[TestSaveCustom] Save triggered in slot {testSaveSlot}.", this);
-        }
-        else
+        #region === Save Testing ===
+
+        /// <summary>
+        /// Performs a save event and logs contextual information.
+        /// If a test slot is defined, logs the slot index.
+        /// </summary>
+        private void SaveTestSlot()
         {
             SaveEvent();
-            Debug.Log("[TestSaveCustom] Save triggered (no specific slot).", this);
+
+            if (testSaveSlot > 0)
+            {
+                Debug.Log($"[{nameof(TestSaveCustom)}] Save triggered in slot {testSaveSlot}.", this);
+            }
+            else
+            {
+                Debug.Log($"[{nameof(TestSaveCustom)}] Save triggered (no specific slot).", this);
+            }
         }
-    }
 
-    #endregion
+        #endregion
 
-    #region === GameObject Toggle ===
+        #region === GameObject Toggle ===
 
-    /// <summary>
-    /// Toggles the active state of each GameObject in the assigned array.
-    /// If a GameObject is active, it becomes inactive, and vice versa.
-    /// Useful for testing dynamic object visibility or activation during gameplay.
-    /// </summary>
-    public void SwitchGameObject()
-    {
-        foreach (var obj in gameObjects)
+        /// <summary>
+        /// Toggles the active state of all assigned GameObjects.
+        /// Useful for testing runtime changes and persistence behavior.
+        /// </summary>
+        public void SwitchGameObject()
         {
-            obj.SetActive(!obj.activeSelf);
+            if (gameObjects == null || gameObjects.Length == 0)
+            {
+                Debug.LogWarning($"[{nameof(TestSaveCustom)}] No GameObjects assigned.", this);
+                return;
+            }
+
+            foreach (var obj in gameObjects)
+            {
+                if (obj == null) continue;
+                obj.SetActive(!obj.activeSelf);
+            }
+
+            Debug.Log($"[{nameof(TestSaveCustom)}] Toggled GameObjects state.", this);
         }
 
-        Debug.Log("[TestSaveCustom] Toggled GameObjects state.", this);
+        #endregion
     }
-
-    #endregion
 }

@@ -12,9 +12,11 @@ A **flexible save and load system for Unity** using `.json` and `PlayerPrefs`, f
 
 # 📦 Download
 
-[Save Custom Game - Package v0.1.0](https://drive.google.com/file/d/1ecLovaOp3ja2iqXO__EV7s8vS6Xa2TY1/view?usp=drive_link)
+[Unity Asset Store]()
+
+[Save Custom Game - Package v0.1.0](https://github.com/AGAMEN0M/Save-Custom-Game/releases/download/v0.1.0/Save.Custom.Game.-.by.Lucas_AGAMENOM.unitypackage)
  / 
-[Documentation](https://drive.google.com/file/d/1u38N8dfsfLSGB4JZeKJM7cOrXaD0JY2M/view?usp=drive_link)
+[Documentation](https://github.com/user-attachments/files/30386096/Save.Custom.Game.Documentation.pdf)
 
 ---
 
@@ -59,7 +61,7 @@ You can learn how to use this system step-by-step here:
 
 # 🧪 Old Versions
 
-* 📦 [Old Versions - Package](https://drive.google.com/drive/folders/1tfViPYk7Pi_i4fieT8m8zfYend9P9qd7?usp=drive_link)
+* 📦 [Old Versions - Package](https://github.com/AGAMEN0M/Save-Custom-Game/releases)
 
 ---
 
